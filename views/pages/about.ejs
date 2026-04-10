@@ -1,0 +1,19 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header', { currentPath, company }) %>
+<main class="section">
+  <div class="container page-head">
+    <p class="eyebrow">Despre noi</p>
+    <h1><%= content?.about_hero?.title || 'Atelier floral local cu viziune moderna' %></h1>
+    <p class="lead"><%= content?.about_hero?.subtitle || 'Construim experiente florale care inspira incredere, feminitate si simplitate eleganta.' %></p>
+  </div>
+  <div class="container two-col">
+    <div class="card">
+      <h2><%= content?.about_mission?.title || 'Misiunea noastra' %></h2>
+      <p><%= content?.about_mission?.body || 'Punem accent pe compozitii naturale, cromatica echilibrata si materiale premium. Fiecare comanda este tratata ca un proiect personal.' %></p>
+    </div>
+    <div class="card image-frame about-image-frame">
+      <img src="<%= content?.about_hero?.image_path || '/images/despre%20noi%20image.jpeg' %>" alt="Atelier floral" class="about-image" />
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer', { company }) %>

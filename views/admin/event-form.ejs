@@ -1,0 +1,60 @@
+<%- include('head') %>
+<%- include('nav', { admin }) %>
+<main class="section">
+  <div class="container page-head inline-head">
+    <div>
+      <p class="eyebrow">Evenimente</p>
+      <h1><%= mode === 'create' ? 'Eveniment nou' : 'Editare eveniment' %></h1>
+    </div>
+    <a class="btn btn-ghost" href="/admin/evenimente">Inapoi la evenimente</a>
+  </div>
+
+  <% if (message) { %>
+    <div class="container card success"><%= message %></div>
+  <% } %>
+
+  <section class="container card">
+    <form class="form-grid" method="post" enctype="multipart/form-data" action="<%= mode === 'create' ? '/admin/evenimente' : '/admin/evenimente/' + event.id %>">
+      <label class="full">
+        Titlu eveniment
+        <input type="text" name="title" required value="<%= event?.title || '' %>" />
+      </label>
+      <label>
+        Data
+        <input type="date" name="event_date" required value="<%= event?.event_date ? new Date(event.event_date).toISOString().slice(0, 10) : '' %>" />
+      </label>
+      <label>
+        Locatie
+        <input type="text" name="location" required value="<%= event?.location || '' %>" />
+      </label>
+      <label class="full">
+        Descriere
+        <textarea name="description" rows="5" required><%= event?.description || '' %></textarea>
+      </label>
+      <label>
+        Ordine afisare
+        <input type="number" name="sort_order" min="0" step="1" value="<%= event?.sort_order ?? 0 %>" />
+      </label>
+      <label>
+        Status
+        <select name="active" required>
+          <option value="1" <%= event?.active !== false ? 'selected' : '' %>>Activ</option>
+          <option value="0" <%= event?.active === false ? 'selected' : '' %>>Inactiv</option>
+        </select>
+      </label>
+      <label class="full">
+        Poza eveniment
+        <input type="file" name="image" accept="image/*" />
+        <span class="small-note">Daca incarci o poza noua, cea veche se inlocuieste.</span>
+      </label>
+      <% if (event?.image_path) { %>
+        <div class="full">
+          <p class="small-note" style="margin-bottom: 0.5rem;">Imagine curenta:</p>
+          <img src="<%= event.image_path %>" alt="<%= event.title %>" style="max-width: 280px; border-radius: 14px; border: 1px solid #e8dce1;" />
+        </div>
+      <% } %>
+      <button class="btn btn-primary" type="submit"><%= mode === 'create' ? 'Adauga eveniment' : 'Salveaza modificarile' %></button>
+    </form>
+  </section>
+</main>
+<%- include('footer') %>

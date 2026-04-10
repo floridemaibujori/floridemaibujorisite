@@ -1,0 +1,77 @@
+<%- include('head') %>
+<%- include('nav', { admin }) %>
+<main class="section">
+  <div class="container page-head inline-head">
+    <div>
+      <p class="eyebrow">Detaliu comanda</p>
+      <h1><%= order.order_number || `Comanda ${order.id}` %></h1>
+      <p class="lead"><%= new Date(order.created_at).toLocaleString('ro-RO') %></p>
+    </div>
+    <a class="btn btn-secondary" href="/admin/comenzi">Inapoi la lista</a>
+  </div>
+
+  <% if (message) { %>
+    <div class="container card success"><%= message %></div>
+  <% } %>
+
+  <section class="container two-col admin-form-layout">
+    <article class="card">
+      <h2>Date client</h2>
+      <p><strong>Nume:</strong> <%= order.customer_name %></p>
+      <p><strong>Telefon:</strong> <%= order.customer_phone %></p>
+      <p><strong>Email:</strong> <%= order.customer_email || '-' %></p>
+      <p><strong>Adresa:</strong> <%= order.customer_address %></p>
+      <p><strong>Oras:</strong> <%= order.customer_city %></p>
+      <p><strong>Observatii:</strong> <%= order.customer_note || '-' %></p>
+      <p><strong>Cod reducere:</strong> <%= order.coupon_code || '-' %></p>
+      <p><strong>Plata:</strong> <%= order.payment_method %> / <%= order.payment_status %></p>
+      <p><strong>Stripe session:</strong> <%= order.stripe_session_id || '-' %></p>
+      <p><strong>Stripe payment intent:</strong> <%= order.stripe_payment_intent_id || '-' %></p>
+      <p><strong>Subtotal:</strong> <%= Number(order.subtotal_amount || order.total_amount).toFixed(2) %> lei</p>
+      <p><strong>Reducere:</strong> <%= Number(order.discount_amount || 0).toFixed(2) %> lei</p>
+      <p><strong>Total:</strong> <%= Number(order.total_amount).toFixed(2) %> lei</p>
+    </article>
+
+    <article class="card">
+      <h2>Status comanda</h2>
+      <form action="/admin/comenzi/<%= order.id %>/status" method="post" class="form-grid">
+        <label class="full">
+          Status curent
+          <select name="orderStatus">
+            <% statusOptions.forEach((status) => { %>
+              <option value="<%= status %>" <%= status === order.order_status ? 'selected' : '' %>><%= status %></option>
+            <% }) %>
+          </select>
+        </label>
+        <button class="btn btn-primary" type="submit">Actualizeaza status</button>
+      </form>
+    </article>
+  </section>
+
+  <section class="container card">
+    <h2>Produse comandate</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Produs</th>
+            <th>Pret unitar</th>
+            <th>Cantitate</th>
+            <th>Total linie</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach((item) => { %>
+            <tr>
+              <td><%= item.product_name %></td>
+              <td><%= Number(item.product_price).toFixed(2) %> lei</td>
+              <td><%= item.quantity %></td>
+              <td><%= Number(item.line_total).toFixed(2) %> lei</td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<%- include('footer') %>

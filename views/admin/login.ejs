@@ -1,0 +1,23 @@
+<%- include('head') %>
+<main class="section auth-wrap">
+  <section class="card auth-card">
+    <h1>Login admin</h1>
+    <p>Acces pentru administrare produse si continut.</p>
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+    <form action="/admin/login" method="post" class="form-grid">
+      <label>
+        Utilizator
+        <input type="text" name="username" required />
+      </label>
+      <label>
+        Parola
+        <input type="password" name="password" required />
+      </label>
+      <button class="btn btn-primary" type="submit">Intra in admin</button>
+    </form>
+    <p class="small-note">Acces doar pentru administratori autorizati.</p>
+  </section>
+</main>
+<%- include('footer') %>

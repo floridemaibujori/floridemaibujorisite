@@ -1,0 +1,60 @@
+﻿<%- include('../partials/head') %>
+<%- include('../partials/header', { currentPath, company }) %>
+<main class="section">
+  <div class="container page-head">
+    <p class="eyebrow">Contact</p>
+    <h1>Hai sa discutam despre ce ai nevoie</h1>
+    <p class="lead">Trimite detalii prin formular, pe WhatsApp sau telefonic.</p>
+  </div>
+
+  <div class="container two-col">
+    <section class="card">
+      <h2>Formular contact</h2>
+      <% if (formSuccess) { %>
+        <p class="success">Mesaj trimis. Revenim rapid cu raspuns.</p>
+      <% } %>
+      <form action="/contact" method="post" class="form-grid">
+        <label>
+          Nume
+          <input type="text" name="name" required />
+        </label>
+        <label>
+          Telefon
+          <input type="tel" name="phone" required />
+        </label>
+        <label>
+          Email
+          <input type="email" name="email" />
+        </label>
+        <label>
+          Tip cerere
+          <select name="requestType">
+            <option>Comanda produs</option>
+            <option>Rezervare eveniment</option>
+            <option>Informatii generale</option>
+          </select>
+        </label>
+        <label class="full">
+          Mesaj
+          <textarea name="message" rows="5" placeholder="Spune-ne ce produse te intereseaza, data si bugetul aproximativ."></textarea>
+        </label>
+        <button class="btn btn-primary" type="submit">Trimite mesaj</button>
+      </form>
+    </section>
+
+    <aside class="card contact-stack">
+      <h2>Date contact</h2>
+      <p><strong>Telefon principal:</strong> <a href="tel:0722747762">0722747762</a></p>
+      <p><strong>Telefon secundar:</strong> <a href="tel:+40700000000">+40 7XX XXX XXX</a></p>
+      <p><strong>WhatsApp:</strong> <a href="<%= company.whatsappLink %>" target="_blank" rel="noreferrer">Deschide chat</a></p>
+      <p><strong>Instagram:</strong> <a href="<%= company.social.instagram %>" target="_blank" rel="noreferrer">Vezi pagina</a></p>
+      <p><strong>Facebook:</strong> <a href="<%= company.social.facebook %>" target="_blank" rel="noreferrer">Vezi pagina</a></p>
+      <div class="btn-col">
+        <a class="btn btn-secondary" href="<%= company.whatsappLink %>" target="_blank" rel="noreferrer">Comanda pe WhatsApp</a>
+        <a class="btn btn-primary" href="tel:0722747762">Suna acum</a>
+      </div>
+    </aside>
+  </div>
+</main>
+<%- include('../partials/footer', { company }) %>
+

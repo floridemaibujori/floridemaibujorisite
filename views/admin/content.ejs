@@ -1,0 +1,70 @@
+<%- include('head') %>
+<%- include('nav', { admin }) %>
+<main class="section">
+  <div class="container page-head">
+    <p class="eyebrow">Continut site</p>
+    <h1>Editeaza textele principale</h1>
+    <p class="lead">Aici poti edita homepage si pagina Despre noi, direct din admin.</p>
+  </div>
+
+  <% if (message) { %>
+    <div class="container card success"><%= message %></div>
+  <% } %>
+
+  <%
+    const sectionLabels = {
+      hero: 'Acasa - Hero',
+      intro: 'Acasa - Intro',
+      contact_cta: 'Acasa - Contact CTA',
+      about_hero: 'Despre noi - Header',
+      about_mission: 'Despre noi - Misiune'
+    };
+    const sectionSupportsImage = {
+      hero: true,
+      about_hero: true
+    };
+    const sectionHideBody = {
+      about_hero: true
+    };
+  %>
+
+  <% sections.forEach((section) => { %>
+    <section class="container card admin-content-card">
+      <h2>Sectiune: <%= sectionLabels[section.section_key] || section.section_key %></h2>
+      <p class="small-note" style="margin-top: -0.4rem; margin-bottom: 0.8rem;">Cheie interna: <%= section.section_key %></p>
+      <form action="/admin/continut/<%= section.section_key %>" method="post" enctype="multipart/form-data" class="form-grid">
+        <label>
+          Titlu
+          <input type="text" name="title" value="<%= section.title || '' %>" />
+        </label>
+        <label>
+          Subtitlu
+          <input type="text" name="subtitle" value="<%= section.subtitle || '' %>" />
+        </label>
+        <% if (!sectionHideBody[section.section_key]) { %>
+          <label class="full">
+            Text principal
+            <textarea rows="4" name="body"><%= section.body || '' %></textarea>
+          </label>
+        <% } else { %>
+          <input type="hidden" name="body" value="<%= section.body || '' %>" />
+        <% } %>
+        <% if (sectionSupportsImage[section.section_key]) { %>
+          <label class="full">
+            Poza sectiune
+            <input type="file" name="section_image" accept="image/*" />
+            <span class="small-note">Daca alegi o imagine noua, se inlocuieste cea veche.</span>
+          </label>
+          <% if (section.image_path) { %>
+            <div class="full">
+              <p class="small-note" style="margin-bottom: 0.5rem;">Imagine curenta:</p>
+              <img src="<%= section.image_path %>" alt="Imagine sectiune" style="max-width: 260px; border-radius: 14px; border: 1px solid #e8dce1;" />
+            </div>
+          <% } %>
+        <% } %>
+        <button class="btn btn-primary" type="submit">Salveaza sectiunea</button>
+      </form>
+    </section>
+  <% }) %>
+</main>
+<%- include('footer') %>

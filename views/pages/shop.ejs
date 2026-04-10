@@ -1,0 +1,37 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header', { currentPath, company }) %>
+<main class="section">
+  <div class="container page-head inline-head">
+    <div>
+      <p class="eyebrow">Magazin online</p>
+      <h1>Produse florale disponibile</h1>
+      <p class="lead">Catalog simplu pentru comenzi si rezervari rapide.</p>
+    </div>
+    <a class="btn btn-secondary" href="/cos">Vezi cosul</a>
+  </div>
+
+  <div class="container categories-row">
+    <% categories.forEach((c) => { %>
+      <span class="chip"><%= c.category %></span>
+    <% }) %>
+  </div>
+
+  <div class="container cards-grid shop-grid">
+    <% products.forEach((product) => { %>
+      <article class="product-card card" data-product-card data-product-url="/magazin/produs/<%= product.id %>" tabindex="0" role="link" aria-label="Deschide produsul <%= product.name %>">
+        <img src="<%= product.cover_image || '/images/placeholder-peony-1.svg' %>" alt="<%= product.name %>" />
+        <p class="category"><%= product.category %></p>
+        <h3><%= product.name %></h3>
+        <p><%= product.description %></p>
+        <div class="product-meta">
+          <strong><%= Number(product.price).toFixed(2) %> lei</strong>
+          <div class="btn-mini-row">
+            <button class="btn btn-small" data-add-to-cart data-product-id="<%= product.id %>" data-product-name="<%= product.name %>" data-product-price="<%= product.price %>">Adauga in cos</button>
+            <a class="btn btn-ghost btn-small" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(product.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
+          </div>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+</main>
+<%- include('../partials/footer', { company }) %>

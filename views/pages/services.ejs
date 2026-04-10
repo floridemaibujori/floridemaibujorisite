@@ -1,0 +1,35 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header', { currentPath, company }) %>
+<main class="section">
+  <div class="container page-head">
+    <p class="eyebrow">Servicii</p>
+    <h1>Servicii florale pentru cadouri si evenimente</h1>
+  </div>
+  <div class="container cards-grid">
+    <article class="card">
+      <h3>Buchete personalizate</h3>
+      <p>Comenzi rapide sau pe baza de brief: culoare, buget, ocazie, mesaj.</p>
+    </article>
+    <article class="card">
+      <h3>Aranjamente in cutie</h3>
+      <p>Format premium, usor de oferit, ideal pentru surprize corporate sau personale.</p>
+    </article>
+    <article class="card">
+      <h3>Decor evenimente</h3>
+      <p>Concept floral pentru nunti intime, botez, cununie civila, lansari private.</p>
+    </article>
+    <article class="card">
+      <h3>Abonament floral</h3>
+      <p>Livrari recurente pentru birou sau acasa, cu design actualizat sezonier.</p>
+    </article>
+  </div>
+  <section class="container card" style="margin-top: 1.15rem;">
+    <h2>Vrei o recomandare rapida pentru serviciul potrivit?</h2>
+    <p>Spune-ne ce tip de eveniment sau cadou ai in minte si revenim cu o propunere clara.</p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="/contact">Contacteaza-ne</a>
+      <a class="btn btn-secondary" href="<%= company.whatsappLink %>" target="_blank" rel="noreferrer">Scrie pe WhatsApp</a>
+    </div>
+  </section>
+</main>
+<%- include('../partials/footer', { company }) %>

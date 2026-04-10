@@ -1,0 +1,66 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header', { currentPath, company }) %>
+<main class="section">
+  <div class="container card order-success-card">
+    <p class="eyebrow">Comanda inregistrata</p>
+    <h1>Multumim! Comanda ta a fost trimisa.</h1>
+    <% if (paymentInfo) { %>
+      <p class="success"><%= paymentInfo %></p>
+    <% } %>
+    <p class="lead">Numar comanda: <strong><%= order.order_number || order.id %></strong></p>
+    <p>Te contactam telefonic pentru confirmare si detalii de livrare.</p>
+
+    <div class="order-meta-grid">
+      <article class="card">
+        <h3>Date client</h3>
+        <p><strong>Nume:</strong> <%= order.customer_name %></p>
+        <p><strong>Telefon:</strong> <%= order.customer_phone %></p>
+        <p><strong>Adresa:</strong> <%= order.customer_address %>, <%= order.customer_city %></p>
+      </article>
+      <article class="card">
+        <h3>Plata si total</h3>
+        <p><strong>Metoda plata:</strong> <%= order.payment_method %></p>
+        <p><strong>Status plata:</strong> <%= order.payment_status %></p>
+        <p><strong>Subtotal:</strong> <%= Number(order.subtotal_amount || order.total_amount).toFixed(2) %> lei</p>
+        <p><strong>Reducere:</strong> <%= Number(order.discount_amount || 0).toFixed(2) %> lei</p>
+        <p><strong>Total:</strong> <%= Number(order.total_amount).toFixed(2) %> lei</p>
+      </article>
+    </div>
+
+    <section class="card">
+      <h2>Produse comandate</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Produs</th>
+              <th>Pret</th>
+              <th>Cantitate</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% orderItems.forEach((item) => { %>
+              <tr>
+                <td><%= item.product_name %></td>
+                <td><%= Number(item.product_price).toFixed(2) %> lei</td>
+                <td><%= item.quantity %></td>
+                <td><%= Number(item.line_total).toFixed(2) %> lei</td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="btn-row">
+      <a class="btn btn-primary" href="/magazin">Continua cumparaturile</a>
+      <a class="btn btn-secondary" href="/contact">Contact rapid</a>
+    </div>
+  </div>
+</main>
+<script>
+  localStorage.removeItem('atelier_bujori_cart');
+  localStorage.removeItem('atelier_bujori_coupon');
+</script>
+<%- include('../partials/footer', { company }) %>

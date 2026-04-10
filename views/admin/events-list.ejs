@@ -1,0 +1,60 @@
+<%- include('head') %>
+<%- include('nav', { admin }) %>
+<main class="section">
+  <div class="container page-head inline-head">
+    <div>
+      <p class="eyebrow">Evenimente</p>
+      <h1>Administrare evenimente sezoniere</h1>
+      <p class="lead">Gestionezi separat 14 februarie, 1 martie, 8 martie si alte campanii.</p>
+    </div>
+    <a class="btn btn-primary" href="/admin/evenimente/nou">Adauga eveniment</a>
+  </div>
+
+  <% if (message) { %>
+    <div class="container card success"><%= message %></div>
+  <% } %>
+
+  <section class="container card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Imagine</th>
+            <th>Titlu</th>
+            <th>Data</th>
+            <th>Locatie</th>
+            <th>Status</th>
+            <th>Ordine</th>
+            <th>Actiuni</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!events.length) { %>
+            <tr>
+              <td colspan="7">Nu exista evenimente inregistrate.</td>
+            </tr>
+          <% } %>
+          <% events.forEach((event) => { %>
+            <tr>
+              <td><img class="table-thumb" src="<%= event.image_path || '/images/placeholder-peony-1.svg' %>" alt="<%= event.title %>" /></td>
+              <td><%= event.title %></td>
+              <td><%= event.event_date ? new Date(event.event_date).toISOString().slice(0, 10) : '-' %></td>
+              <td><%= event.location %></td>
+              <td><span class="status-pill"><%= event.active ? 'Activ' : 'Inactiv' %></span></td>
+              <td><%= event.sort_order %></td>
+              <td>
+                <div class="btn-mini-row">
+                  <a class="btn btn-small btn-ghost" href="/admin/evenimente/<%= event.id %>/editare">Editeaza</a>
+                  <form action="/admin/evenimente/<%= event.id %>/sterge" method="post" onsubmit="return confirm('Sigur stergi acest eveniment?');">
+                    <button class="btn btn-small btn-danger" type="submit">Sterge</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<%- include('footer') %>

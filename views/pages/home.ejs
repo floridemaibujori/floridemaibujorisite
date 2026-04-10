@@ -1,0 +1,175 @@
+﻿<%- include('../partials/head') %>
+<%- include('../partials/header', { currentPath, company }) %>
+
+<main>
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <p class="eyebrow">Colectii florale premium</p>
+        <h1><%= content.hero?.title %></h1>
+        <p class="lead"><%= content.hero?.subtitle %></p>
+        <p><%= content.hero?.body %></p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="/magazin"><%= content.hero?.cta_primary || 'Vezi magazinul' %></a>
+          <a class="btn btn-secondary" href="<%= company.whatsappLink %>" target="_blank" rel="noreferrer"><%= content.hero?.cta_secondary || 'Scrie pe WhatsApp' %></a>
+        </div>
+        <div class="quick-links">
+          <a href="tel:0722747762">Suna: 0722747762</a>
+          <a href="/contact">Cerere rapida</a>
+          <a href="<%= company.social.instagram %>" target="_blank" rel="noreferrer">Instagram</a>
+        </div>
+      </div>
+      <div class="hero-art card">
+        <img src="<%= content.hero?.image_path || '/images/heroimg.png' %>" alt="Bujori eleganti" />
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container two-col">
+      <div>
+        <p class="eyebrow">Introducere</p>
+        <h2><%= content.intro?.title %></h2>
+        <p class="lead"><%= content.intro?.subtitle %></p>
+      </div>
+      <div>
+        <p><%= content.intro?.body %></p>
+        <a class="text-link" href="/despre-noi">Afla povestea noastra</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-soft">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Produse recomandate</p>
+        <h2>Selectie pentru comenzi rapide</h2>
+      </div>
+      <div class="cards-grid">
+        <% featuredProducts.forEach((product) => { %>
+          <article class="product-card card" data-product-card data-product-url="/magazin/produs/<%= product.id %>" tabindex="0" role="link" aria-label="Deschide produsul <%= product.name %>">
+            <img src="<%= product.cover_image || '/images/placeholder-peony-1.svg' %>" alt="<%= product.name %>" />
+            <div>
+              <p class="category"><%= product.category %></p>
+              <h3><%= product.name %></h3>
+              <p><%= product.description %></p>
+            </div>
+            <div class="product-meta">
+              <strong><%= Number(product.price).toFixed(2) %> lei</strong>
+              <div class="btn-mini-row">
+                <button class="btn btn-small" data-add-to-cart data-product-id="<%= product.id %>" data-product-name="<%= product.name %>" data-product-price="<%= product.price %>">Adauga in cos</button>
+                <a class="btn btn-ghost btn-small" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(product.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
+              </div>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container features-grid">
+      <article class="card feature-card">
+        <h3>Stil atent curatat</h3>
+        <p>Fiecare aranjament este echilibrat vizual, cu tonuri naturale si accente elegante.</p>
+      </article>
+      <article class="card feature-card">
+        <h3>Comunicare rapida</h3>
+        <p>Preluam cereri pe WhatsApp, telefon si social, cu raspuns clar si timp estimat.</p>
+      </article>
+      <article class="card feature-card">
+        <h3>Flexibil pentru evenimente</h3>
+        <p>Poti rezerva produse standard sau solicita o oferta personalizata pentru eveniment.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section section-soft">
+    <div class="container testimonials">
+      <div class="section-head">
+        <p class="eyebrow">Incredere</p>
+        <h2>Recenzii reale de la clienti verificati</h2>
+        <p class="lead">
+          Rating mediu:
+          <strong><%= trust.summary.avgRating ? trust.summary.avgRating.toFixed(1) : '0.0' %>/5</strong>
+          din <strong><%= trust.summary.totalCount %></strong> recenzii.
+        </p>
+      </div>
+      <div class="cards-grid">
+        <% if (!trust.reviews.length) { %>
+          <article class="card quote-card">
+            <p>Nu exista recenzii publicate momentan. Fii primul client care lasa feedback.</p>
+          </article>
+        <% } %>
+        <% trust.reviews.forEach((review) => { %>
+          <article class="card quote-card premium-review-card">
+            <div class="stars" aria-label="Rating <%= review.rating %> din 5">
+              <% for (let i = 1; i <= 5; i++) { %>
+                <span class="<%= i <= review.rating ? 'star-on' : 'star-off' %>">★</span>
+              <% } %>
+            </div>
+            <h3><%= review.title %></h3>
+            <p>"<%= review.message %>"</p>
+            <strong><%= review.reviewer_name %></strong>
+          </article>
+        <% }) %>
+      </div>
+
+      <div class="review-toggle-row">
+        <button class="btn btn-primary" type="button" data-review-toggle data-target="#trust-review-panel">Scrie recenzia ta</button>
+      </div>
+
+      <div class="card review-form-card is-hidden" id="trust-review-panel" data-trust-review-panel>
+        <h3>Lasa recenzia ta in sectiunea de incredere</h3>
+        <p class="small-note">Recenzia este acceptata doar daca emailul are cel putin o comanda inregistrata.</p>
+        <form class="form-grid" data-review-form data-review-type="trust">
+          <label>
+            Nume
+            <input type="text" name="reviewerName" required />
+          </label>
+          <label>
+            Email comanda
+            <input type="email" name="reviewerEmail" required />
+          </label>
+          <label>
+            Rating
+            <select name="rating" required>
+              <option value="">Alege</option>
+              <option value="5">5 stele</option>
+              <option value="4">4 stele</option>
+              <option value="3">3 stele</option>
+              <option value="2">2 stele</option>
+              <option value="1">1 stea</option>
+            </select>
+          </label>
+          <label>
+            Titlu recenzie
+            <input type="text" name="title" required />
+          </label>
+          <label class="full">
+            Mesaj
+            <textarea name="message" rows="4" required></textarea>
+          </label>
+          <button class="btn btn-primary" type="submit">Trimite recenzie</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="section cta-banner">
+    <div class="container cta-flex">
+      <div>
+        <p class="eyebrow">Contact rapid</p>
+        <h2><%= content.contact_cta?.title %></h2>
+        <p><%= content.contact_cta?.body %></p>
+      </div>
+      <div class="btn-col">
+        <a class="btn btn-primary" href="/contact"><%= content.contact_cta?.cta_primary || 'Contacteaza-ne' %></a>
+        <a class="btn btn-secondary" href="tel:0722747762"><%= content.contact_cta?.cta_secondary || 'Suna acum' %></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer', { company }) %>
+

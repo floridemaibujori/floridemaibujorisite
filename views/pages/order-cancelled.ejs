@@ -1,0 +1,14 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header', { currentPath, company }) %>
+<main class="section">
+  <div class="container card order-success-card">
+    <p class="eyebrow">Plata anulata</p>
+    <h1>Plata online nu a fost finalizata.</h1>
+    <p>Poti reveni in checkout pentru a incerca din nou sau poti alege plata ramburs.</p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="/cos">Inapoi la checkout</a>
+      <a class="btn btn-secondary" href="/magazin">Continua cumparaturile</a>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer', { company }) %>

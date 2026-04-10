@@ -1,0 +1,111 @@
+<%- include('head') %>
+<%- include('nav', { admin }) %>
+<main class="section">
+  <div class="container page-head">
+    <p class="eyebrow">Recenzii incredere</p>
+    <h1>Administrare recenzii globale</h1>
+    <p class="lead">Aceste recenzii apar in sectiunea Incredere de pe homepage.</p>
+  </div>
+
+  <% if (message) { %>
+    <div class="container card success"><%= message %></div>
+  <% } %>
+
+  <section class="container card">
+    <h2>Adauga recenzie incredere</h2>
+    <form action="/admin/recenzii/incredere" method="post" class="form-grid">
+      <label>
+        Nume client
+        <input type="text" name="reviewer_name" required />
+      </label>
+      <label>
+        Email client
+        <input type="email" name="reviewer_email" required />
+      </label>
+      <label>
+        Rating
+        <select name="rating" required>
+          <option value="5">5</option>
+          <option value="4">4</option>
+          <option value="3">3</option>
+          <option value="2">2</option>
+          <option value="1">1</option>
+        </select>
+      </label>
+      <label>
+        Vizibilitate
+        <select name="is_public">
+          <option value="1">Public</option>
+          <option value="0">Ascuns</option>
+        </select>
+      </label>
+      <label class="full">
+        Titlu
+        <input type="text" name="title" required />
+      </label>
+      <label class="full">
+        Mesaj
+        <textarea name="message" rows="3" required></textarea>
+      </label>
+      <button class="btn btn-primary" type="submit">Adauga recenzie</button>
+    </form>
+  </section>
+
+  <section class="container section">
+    <div class="cards-grid">
+      <% if (!reviews.length) { %>
+        <article class="card">
+          <p>Nu exista recenzii incredere momentan.</p>
+        </article>
+      <% } %>
+      <% reviews.forEach((review) => { %>
+        <article class="card">
+          <h3><%= review.title %></h3>
+          <p class="small-note"><strong><%= review.reviewer_name %></strong> · <%= review.reviewer_email %></p>
+          <p class="small-note">Rating: <%= review.rating %>/5 · <%= review.is_public ? 'Public' : 'Ascuns' %></p>
+          <p><%= review.message %></p>
+
+          <form action="/admin/recenzii/incredere/<%= review.id %>" method="post" class="form-grid">
+            <label>
+              Nume
+              <input type="text" name="reviewer_name" value="<%= review.reviewer_name %>" required />
+            </label>
+            <label>
+              Email
+              <input type="email" name="reviewer_email" value="<%= review.reviewer_email %>" required />
+            </label>
+            <label>
+              Rating
+              <select name="rating">
+                <% for (let i = 5; i >= 1; i--) { %>
+                  <option value="<%= i %>" <%= Number(review.rating) === i ? 'selected' : '' %>><%= i %></option>
+                <% } %>
+              </select>
+            </label>
+            <label>
+              Vizibilitate
+              <select name="is_public">
+                <option value="1" <%= review.is_public ? 'selected' : '' %>>Public</option>
+                <option value="0" <%= !review.is_public ? 'selected' : '' %>>Ascuns</option>
+              </select>
+            </label>
+            <label class="full">
+              Titlu
+              <input type="text" name="title" value="<%= review.title %>" required />
+            </label>
+            <label class="full">
+              Mesaj
+              <textarea name="message" rows="3" required><%= review.message %></textarea>
+            </label>
+            <button class="btn btn-secondary btn-small" type="submit">Actualizeaza</button>
+          </form>
+
+          <form action="/admin/recenzii/incredere/<%= review.id %>/sterge" method="post" onsubmit="return confirm('Stergi recenzia?');">
+            <button class="btn btn-danger btn-small" type="submit">Sterge recenzie</button>
+          </form>
+        </article>
+      <% }) %>
+    </div>
+  </section>
+</main>
+<%- include('footer') %>

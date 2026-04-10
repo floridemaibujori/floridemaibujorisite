@@ -1,0 +1,29 @@
+<header class="site-header">
+  <div class="container nav-wrap">
+    <a class="logo" href="/">
+      <img src="/images/logo-banner.png" alt="Flori de Mai Bujori" class="logo-banner" />
+    </a>
+
+    <div class="mobile-top-actions">
+      <a class="btn btn-ghost btn-small cart-btn mobile-cart-btn" href="/cos">
+        Cos <span class="cart-badge" data-cart-count>0</span>
+      </a>
+      <button class="mobile-menu-btn" aria-label="Meniu" data-mobile-menu-btn>Meniu</button>
+    </div>
+
+    <nav class="site-nav" data-mobile-menu>
+      <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">Acasa</a>
+      <a href="/despre-noi" class="<%= currentPath === '/despre-noi' ? 'active' : '' %>">Despre noi</a>
+      <a href="/servicii" class="<%= currentPath === '/servicii' ? 'active' : '' %>">Servicii</a>
+      <a href="/magazin" class="<%= currentPath === '/magazin' ? 'active' : '' %>">Magazin</a>
+      <a href="/evenimente" class="<%= currentPath === '/evenimente' ? 'active' : '' %>">Evenimente</a>
+      <a href="/contact" class="<%= currentPath === '/contact' ? 'active' : '' %>">Contact</a>
+      <a href="<%= company.whatsappLink %>" target="_blank" rel="noreferrer" class="mobile-whatsapp-cta">WhatsApp rapid</a>
+    </nav>
+
+    <div class="header-actions">
+      <a class="btn btn-ghost btn-small cart-btn" href="/cos">Cos <span class="cart-badge" data-cart-count>0</span></a>
+      <a class="btn btn-primary" href="<%= company.whatsappLink %>" target="_blank" rel="noreferrer">WhatsApp</a>
+    </div>
+  </div>
+</header>

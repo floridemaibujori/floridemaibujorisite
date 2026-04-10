@@ -1,0 +1,96 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header', { currentPath, company }) %>
+<main class="section">
+  <div class="container page-head">
+    <p class="eyebrow">Cos si checkout</p>
+    <h1>Alege cum doresti sa continui</h1>
+    <p class="lead">Poti rezerva produsele din magazin sau trimite direct comanda.</p>
+  </div>
+
+  <div class="container checkout-mode-row" data-checkout-mode-row>
+    <button class="btn btn-secondary is-active" type="button" data-mode-toggle="rezerva">Rezerva in magazin</button>
+    <button class="btn btn-primary" type="button" data-mode-toggle="comanda">Comanda</button>
+  </div>
+
+  <div class="container two-col cart-layout">
+    <div class="card cart-panel" data-cart-panel>
+      <p>Cosul este gol momentan.</p>
+    </div>
+
+    <div class="checkout-column">
+      <section class="card" data-checkout-reserve>
+        <h2>Rezervare rapida</h2>
+        <p>Rezerva produsele selectate direct in magazin. Te contactam telefonic pentru confirmare.</p>
+        <div class="btn-col">
+          <a class="btn btn-primary" href="<%= company.whatsappLink %>" target="_blank" rel="noreferrer" data-whatsapp-reserve>Trimite rezervare pe WhatsApp</a>
+          <a class="btn btn-secondary" href="tel:0722747762">Suna acum: 0722747762</a>
+        </div>
+      </section>
+
+      <form class="card form-grid checkout-form is-hidden" data-checkout-form>
+        <h2 class="full">Date comanda</h2>
+
+        <label>
+          Nume complet
+          <input type="text" name="customerName" required />
+        </label>
+
+        <label>
+          Telefon
+          <input type="tel" name="customerPhone" required />
+        </label>
+
+        <label>
+          Email
+          <input type="email" name="customerEmail" required />
+        </label>
+
+        <label>
+          Oras
+          <input type="text" name="customerCity" required />
+        </label>
+
+        <label class="full">
+          Adresa livrare
+          <input type="text" name="customerAddress" required />
+        </label>
+
+        <label class="full">
+          Observatii (optional)
+          <textarea name="customerNote" rows="4" placeholder="Ex: interval livrare, cod interfon, detalii buchet."></textarea>
+        </label>
+
+        <div class="full coupon-row">
+          <label>
+            Cod reducere
+            <input type="text" name="couponCode" placeholder="Ex: BUNVENIT10" data-coupon-input />
+          </label>
+          <button class="btn btn-ghost btn-small" type="button" data-apply-coupon>Aplica</button>
+        </div>
+
+        <p class="full small-note" data-coupon-feedback></p>
+
+        <fieldset class="full payment-choices">
+          <legend>Metoda plata</legend>
+          <label class="pay-option">
+            <input type="radio" name="paymentMethod" value="ramburs" checked />
+            <span>Ramburs la livrare</span>
+          </label>
+          <label class="pay-option">
+            <input type="radio" name="paymentMethod" value="card" />
+            <span>Card online Stripe (test)</span>
+          </label>
+        </fieldset>
+
+        <div class="full btn-col">
+          <button class="btn btn-primary" type="submit">Trimite comanda</button>
+          <a class="btn btn-secondary" href="<%= company.whatsappLink %>" target="_blank" rel="noreferrer" data-whatsapp-questions>Ai intrebari? Scrie pe WhatsApp</a>
+        </div>
+
+        <p class="full error" data-checkout-error hidden></p>
+      </form>
+    </div>
+  </div>
+
+</main>
+<%- include('../partials/footer', { company }) %>

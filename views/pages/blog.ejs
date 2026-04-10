@@ -1,0 +1,19 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header', { currentPath, company }) %>
+<main class="section">
+  <div class="container page-head">
+    <p class="eyebrow">Blog</p>
+    <h1>Articole utile despre flori si inspiratie</h1>
+  </div>
+  <div class="container cards-grid">
+    <% posts.forEach((post) => { %>
+      <article class="card">
+        <p class="meta"><%= post.date %> · <%= post.readTime %></p>
+        <h3><%= post.title %></h3>
+        <p><%= post.excerpt %></p>
+        <a class="text-link" href="#">Citeste articol</a>
+      </article>
+    <% }) %>
+  </div>
+</main>
+<%- include('../partials/footer', { company }) %>

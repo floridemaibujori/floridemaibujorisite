@@ -1,0 +1,31 @@
+<header class="admin-header">
+  <div class="container nav-wrap">
+    <a class="logo" href="/admin">
+      <img src="/images/logo-banner.png" alt="Flori de Mai Bujori admin" class="logo-banner" />
+    </a>
+
+    <div class="mobile-top-actions">
+      <button class="mobile-menu-btn" aria-label="Meniu admin" data-mobile-menu-btn>Meniu</button>
+    </div>
+
+    <nav class="site-nav admin-nav" data-mobile-menu>
+      <a href="/admin">Dashboard</a>
+      <a href="/admin/comenzi">Comenzi</a>
+      <a href="/admin/evenimente">Evenimente</a>
+      <a href="/admin/produse">Produse</a>
+      <a href="/admin/produse/nou">Produs nou</a>
+      <a href="/admin/recenzii/incredere">Recenzii incredere</a>
+      <a href="/admin/continut">Continut acasa</a>
+      <a class="admin-mobile-only" href="/" target="_blank" rel="noreferrer">Inapoi la site</a>
+      <form class="admin-mobile-only" action="/admin/logout" method="post">
+        <button class="btn btn-secondary btn-small" type="submit">Logout</button>
+      </form>
+    </nav>
+    <div class="header-actions">
+      <a class="btn btn-ghost btn-small" href="/" target="_blank" rel="noreferrer">Inapoi la site</a>
+      <form action="/admin/logout" method="post">
+        <button class="btn btn-secondary btn-small" type="submit">Logout</button>
+      </form>
+    </div>
+  </div>
+</header>

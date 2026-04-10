@@ -1,0 +1,31 @@
+﻿<%- include('../partials/head') %>
+<%- include('../partials/header', { currentPath, company }) %>
+<main class="section">
+  <div class="container page-head">
+    <p class="eyebrow">Evenimente</p>
+    <h1>Momente speciale in calendarul floral</h1>
+    <p class="lead">14 februarie, 1 martie si 8 martie sunt pregatite cu colectii dedicate, mesaje calde si livrare cu grija.</p>
+  </div>
+  <div class="container cards-grid">
+    <% if (!events.length) { %>
+      <article class="card">
+        <h3>Nu avem evenimente active momentan</h3>
+        <p>Revino curand sau scrie-ne pe WhatsApp pentru o recomandare personalizata.</p>
+        <a class="btn btn-primary" href="<%= company.whatsappLink %>" target="_blank" rel="noreferrer">Scrie pe WhatsApp</a>
+      </article>
+    <% } %>
+    <% events.forEach((event) => { %>
+      <article class="card">
+        <img src="<%= event.image_path || '/images/placeholder-peony-1.svg' %>" alt="<%= event.title %>" style="width: 100%; aspect-ratio: 4/3; object-fit: cover; margin-bottom: 0.85rem;" />
+        <p class="meta"><%= event.date %> · <%= event.location %></p>
+        <h3><%= event.title %></h3>
+        <p><%= event.description %></p>
+        <div class="btn-row">
+          <a class="btn btn-small btn-primary" href="/contact">Rezerva acum</a>
+          <a class="btn btn-small btn-secondary" href="<%= company.whatsappLink %>" target="_blank" rel="noreferrer">Intreaba pe WhatsApp</a>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+</main>
+<%- include('../partials/footer', { company }) %>
