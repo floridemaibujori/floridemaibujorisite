@@ -7,9 +7,6 @@
   --primary: #c85d8f;
   --primary-dark: #a44774;
   --accent: #2f7a78;
-  --sage-soft: #e8f3ef;
-  --sage-tint: #d6ebe4;
-  --sage-deep: #236b63;
   --line: #e5d8dd;
   --radius-lg: 24px;
   --radius-md: 16px;
@@ -61,7 +58,7 @@ p {
 }
 
 .section-soft {
-  background: linear-gradient(180deg, rgba(235, 245, 241, 0.7), rgba(250, 246, 245, 0.75));
+  background: linear-gradient(180deg, rgba(247, 239, 238, 0.9), rgba(250, 246, 245, 0.6));
 }
 
 .site-header,
@@ -227,14 +224,8 @@ p {
 }
 
 .btn-secondary {
-  background: linear-gradient(180deg, var(--sage-soft) 0%, #deeee8 100%);
-  color: var(--sage-deep);
-  border: 1px solid #c8dfd6;
-  box-shadow: 0 10px 20px rgba(49, 115, 100, 0.12);
-}
-
-.btn-secondary:hover {
-  background: linear-gradient(180deg, #ddefe8 0%, #d2e7df 100%);
+  background: #e8f2f1;
+  color: #1f5f5d;
 }
 
 .btn-ghost {
@@ -245,20 +236,6 @@ p {
 .btn-danger {
   background: #a23f4e;
   color: #fff;
-}
-
-.btn-whatsapp-reserve {
-  background: linear-gradient(180deg, #ffffff 0%, #edf6f2 100%) !important;
-  color: #245e56 !important;
-  border: 1px solid #b7d6ca !important;
-  box-shadow: 0 10px 18px rgba(44, 110, 93, 0.16) !important;
-}
-
-.btn-whatsapp-reserve:hover {
-  background: linear-gradient(180deg, #f7fcfa 0%, #deeee7 100%) !important;
-  color: #1e5049 !important;
-  border-color: #9ec8b9 !important;
-  box-shadow: 0 12px 22px rgba(36, 102, 86, 0.2) !important;
 }
 
 .btn-small {
@@ -280,18 +257,6 @@ p {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
-}
-
-.quick-links a {
-  color: #326f68;
-  font-weight: 600;
-  border-bottom: 1px solid transparent;
-  transition: color 0.2s ease, border-color 0.2s ease;
-}
-
-.quick-links a:hover {
-  color: #235a54;
-  border-color: #9ec9bd;
 }
 
 .eyebrow {
@@ -323,7 +288,7 @@ p {
 .hero-art {
   overflow: hidden;
   padding: 0.5rem;
-  background: linear-gradient(150deg, #f5e8ed 0%, #e4efe9 100%);
+  background: linear-gradient(150deg, #f5e8ed, #f0e9e5);
 }
 
 .hero-art img {
@@ -363,14 +328,12 @@ p {
   display: grid;
   gap: 0.9rem;
   cursor: pointer;
-  border-color: #cfe3db;
-  background: linear-gradient(165deg, #fffefe 0%, #e6f2ed 100%);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .product-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 34px rgba(62, 122, 106, 0.22);
+  box-shadow: 0 18px 34px rgba(160, 99, 125, 0.16);
 }
 
 .product-card img {
@@ -465,7 +428,6 @@ p {
 
 .feature-card h3 {
   margin-bottom: 0.35rem;
-  color: #2d665f;
 }
 
 .quote-card p {
@@ -516,7 +478,7 @@ p {
   border-radius: var(--radius-lg);
   border: 1px solid #ead9de;
   padding: 1.5rem;
-  background: linear-gradient(165deg, #fff8fa 0%, #edf5f1 100%);
+  background: linear-gradient(165deg, #fff8fa, #f6f1ef);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -544,7 +506,6 @@ p {
 }
 
 .text-link:hover {
-  color: var(--sage-deep);
   text-decoration: underline;
 }
 
@@ -594,19 +555,6 @@ p {
   height: 72px;
   object-fit: cover;
   border-radius: var(--radius-sm);
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.thumb-row img:hover {
-  transform: translateY(-1px);
-  border-color: #b8d8cc;
-}
-
-.thumb-row img.is-active {
-  border-color: #5ea38f;
-  box-shadow: 0 8px 16px rgba(64, 126, 107, 0.22);
 }
 
 .main-image {
@@ -640,14 +588,6 @@ select {
   padding: 0.66rem 0.78rem;
   font: inherit;
   background: #fff;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-  border-color: #9ac9bd;
-  box-shadow: 0 0 0 3px rgba(106, 170, 153, 0.18);
 }
 
 textarea {
@@ -684,7 +624,6 @@ textarea {
 .footer-grid h4,
 .footer-grid h3 {
   margin-bottom: 0.5rem;
-  color: #2f6f68;
 }
 
 .footer-bottom {
@@ -850,9 +789,8 @@ th {
   align-items: center;
   border-radius: 999px;
   padding: 0.22rem 0.58rem;
-  background: #ecf5f2;
-  border: 1px solid #cde2da;
-  color: #2b645d;
+  background: #f2e9ee;
+  border: 1px solid #dcc9d3;
   font-size: 0.78rem;
   font-weight: 700;
 }

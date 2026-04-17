@@ -442,6 +442,7 @@ router.get('/produse/nou', requireAuth, (req, res) => {
     product: null,
     images: [],
     reviews: [],
+    message: req.query.message || '',
     mode: 'create'
   });
 });

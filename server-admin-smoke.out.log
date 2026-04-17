@@ -1,0 +1,2 @@
+◇ injected env (7) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+Server pornit pe http://localhost:3000

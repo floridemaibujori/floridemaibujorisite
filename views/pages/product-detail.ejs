@@ -2,11 +2,21 @@
 <%- include('../partials/header', { currentPath, company }) %>
 <main class="section">
   <div class="container two-col product-detail-layout">
-    <div class="card image-gallery">
-      <img class="main-image" src="<%= (images[0] && images[0].image_path) || '/images/placeholder-peony-1.svg' %>" alt="<%= product.name %>" />
-      <div class="thumb-row">
-        <% images.forEach((img) => { %>
-          <img src="<%= img.image_path %>" alt="<%= img.alt_text || product.name %>" />
+    <div class="card image-gallery" data-image-gallery>
+      <img
+        class="main-image"
+        data-main-image
+        src="<%= (images[0] && images[0].image_path) || '/images/placeholder-peony-1.svg' %>"
+        alt="<%= product.name %>"
+      />
+      <div class="thumb-row" data-thumb-row>
+        <% images.forEach((img, index) => { %>
+          <img
+            src="<%= img.image_path %>"
+            alt="<%= img.alt_text || product.name %>"
+            data-thumb-image
+            class="<%= index === 0 ? 'is-active' : '' %>"
+          />
         <% }) %>
       </div>
     </div>
@@ -17,7 +27,7 @@
       <p><%= product.description %></p>
       <div class="btn-row">
         <button class="btn btn-primary" data-add-to-cart data-product-id="<%= product.id %>" data-product-name="<%= product.name %>" data-product-price="<%= product.price %>">Adauga in cos</button>
-        <a class="btn btn-secondary" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(product.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
+        <a class="btn btn-secondary btn-whatsapp-reserve" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(product.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
       </div>
       <p class="small-note">Pentru comenzi speciale, suna la 0722747762.</p>
       <a class="text-link" href="/magazin">Inapoi la magazin</a>
@@ -37,7 +47,7 @@
           <p><%= item.description %></p>
           <div class="btn-mini-row">
             <button class="btn btn-small" data-add-to-cart data-product-id="<%= item.id %>" data-product-name="<%= item.name %>" data-product-price="<%= item.price %>">Adauga in cos</button>
-            <a class="btn btn-ghost btn-small" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(item.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
+            <a class="btn btn-ghost btn-small btn-whatsapp-reserve" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(item.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
           </div>
         </article>
       <% }) %>

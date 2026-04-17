@@ -114,6 +114,32 @@
     });
   });
 
+  document.querySelectorAll('[data-image-gallery]').forEach((gallery) => {
+    const mainImage = gallery.querySelector('[data-main-image]');
+    const thumbs = Array.from(gallery.querySelectorAll('[data-thumb-image]'));
+
+    if (!mainImage || !thumbs.length) {
+      return;
+    }
+
+    thumbs.forEach((thumb) => {
+      thumb.addEventListener('click', function () {
+        const newSrc = thumb.getAttribute('src');
+        const newAlt = thumb.getAttribute('alt') || mainImage.getAttribute('alt') || '';
+
+        if (!newSrc) {
+          return;
+        }
+
+        mainImage.setAttribute('src', newSrc);
+        mainImage.setAttribute('alt', newAlt);
+
+        thumbs.forEach((img) => img.classList.remove('is-active'));
+        thumb.classList.add('is-active');
+      });
+    });
+  });
+
   document.querySelectorAll('[data-add-to-cart]').forEach((button) => {
     button.addEventListener('click', function () {
       const item = {

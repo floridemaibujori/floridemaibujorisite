@@ -27,7 +27,7 @@
           <strong><%= Number(product.price).toFixed(2) %> lei</strong>
           <div class="btn-mini-row">
             <button class="btn btn-small" data-add-to-cart data-product-id="<%= product.id %>" data-product-name="<%= product.name %>" data-product-price="<%= product.price %>">Adauga in cos</button>
-            <a class="btn btn-ghost btn-small" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(product.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
+            <a class="btn btn-ghost btn-small btn-whatsapp-reserve" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(product.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
           </div>
         </div>
       </article>
