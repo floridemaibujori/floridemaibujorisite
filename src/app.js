@@ -10,6 +10,7 @@ const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(process.cwd(), 'views'));
+app.set('trust proxy', 1);
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -22,7 +23,7 @@ app.use(
       maxAge: 1000 * 60 * 60 * 8,
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production'
+      secure: 'auto'
     }
   })
 );
