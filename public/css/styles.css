@@ -199,6 +199,24 @@ p {
   background: var(--surface);
 }
 
+.chip-button {
+  cursor: pointer;
+  color: #4b3f47;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chip-button:hover {
+  border-color: #b8d8cc;
+  color: #245e56;
+}
+
+.chip-is-active {
+  background: linear-gradient(180deg, #f7fcfa 0%, #e2f0eb 100%);
+  border-color: #9fc7bb;
+  color: #245e56;
+  box-shadow: 0 8px 16px rgba(50, 112, 96, 0.14);
+}
+
 .btn {
   border: 0;
   padding: 0.76rem 1.2rem;

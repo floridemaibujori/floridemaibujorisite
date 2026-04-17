@@ -114,6 +114,32 @@
     });
   });
 
+  const categoryFilters = Array.from(document.querySelectorAll('[data-category-filter]'));
+  const categoryItems = Array.from(document.querySelectorAll('[data-category-item]'));
+
+  if (categoryFilters.length && categoryItems.length) {
+    const setCategory = function (categoryValue) {
+      const normalized = String(categoryValue || '').trim().toLowerCase();
+
+      categoryFilters.forEach((btn) => {
+        const isActive = btn.dataset.categoryValue === normalized;
+        btn.classList.toggle('chip-is-active', isActive);
+      });
+
+      categoryItems.forEach((item) => {
+        const itemCategory = String(item.dataset.category || '').trim().toLowerCase();
+        const shouldShow = normalized === 'toate' || itemCategory === normalized;
+        item.style.display = shouldShow ? '' : 'none';
+      });
+    };
+
+    categoryFilters.forEach((button) => {
+      button.addEventListener('click', function () {
+        setCategory(button.dataset.categoryValue);
+      });
+    });
+  }
+
   document.querySelectorAll('[data-image-gallery]').forEach((gallery) => {
     const mainImage = gallery.querySelector('[data-main-image]');
     const thumbs = Array.from(gallery.querySelectorAll('[data-thumb-image]'));

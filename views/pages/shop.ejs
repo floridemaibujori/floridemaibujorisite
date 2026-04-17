@@ -11,14 +11,29 @@
   </div>
 
   <div class="container categories-row">
+    <button type="button" class="chip chip-button chip-is-active" data-category-filter data-category-value="toate">Toate</button>
     <% categories.forEach((c) => { %>
-      <span class="chip"><%= c.category %></span>
+      <button
+        type="button"
+        class="chip chip-button"
+        data-category-filter
+        data-category-value="<%= String(c.category || '').trim().toLowerCase() %>"
+      ><%= c.category %></button>
     <% }) %>
   </div>
 
   <div class="container cards-grid shop-grid">
     <% products.forEach((product) => { %>
-      <article class="product-card card" data-product-card data-product-url="/magazin/produs/<%= product.id %>" tabindex="0" role="link" aria-label="Deschide produsul <%= product.name %>">
+      <article
+        class="product-card card"
+        data-product-card
+        data-category-item
+        data-category="<%= String(product.category || '').trim().toLowerCase() %>"
+        data-product-url="/magazin/produs/<%= product.id %>"
+        tabindex="0"
+        role="link"
+        aria-label="Deschide produsul <%= product.name %>"
+      >
         <img src="<%= product.cover_image || '/images/placeholder-peony-1.svg' %>" alt="<%= product.name %>" />
         <p class="category"><%= product.category %></p>
         <h3><%= product.name %></h3>
