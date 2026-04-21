@@ -1,27 +1,14 @@
-const fs = require('fs');
-const path = require('path');
 const express = require('express');
 const multer = require('multer');
 const { query } = require('../config/db');
 const { hashPassword, safeCompare } = require('../utils/security');
 const { requireAuth } = require('../middleware/auth');
 const { makeSlug } = require('../utils/slug');
+const { uploadImage, removeImage } = require('../services/storageService');
 
 const router = express.Router();
 
-const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'products');
-const siteUploadsDir = path.join(process.cwd(), 'public', 'uploads', 'site');
-fs.mkdirSync(uploadsDir, { recursive: true });
-fs.mkdirSync(siteUploadsDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
-    cb(null, `${Date.now()}-${base}${ext}`);
-  }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
@@ -34,14 +21,7 @@ const upload = multer({
   }
 });
 
-const contentStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, siteUploadsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
-    cb(null, `${Date.now()}-${base}${ext}`);
-  }
-});
+const contentStorage = multer.memoryStorage();
 
 const uploadContent = multer({
   storage: contentStorage,
@@ -220,7 +200,7 @@ router.get('/evenimente/nou', requireAuth, (req, res) => {
 
 router.post('/evenimente', requireAuth, uploadContent.single('image'), async (req, res) => {
   const { title, event_date, location, description, active, sort_order } = req.body;
-  const imagePath = req.file ? `/uploads/site/${req.file.filename}` : null;
+  const imagePath = req.file ? await uploadImage(req.file, 'site') : null;
 
   await query(
     `
@@ -271,14 +251,8 @@ router.post('/evenimente/:id', requireAuth, uploadContent.single('image'), async
 
   let imagePath = existingEvent.image_path || null;
   if (req.file) {
-    imagePath = `/uploads/site/${req.file.filename}`;
-
-    if (existingEvent.image_path && String(existingEvent.image_path).startsWith('/uploads/site/')) {
-      const absolute = path.join(process.cwd(), 'public', existingEvent.image_path.replace(/^\//, ''));
-      if (fs.existsSync(absolute)) {
-        fs.unlinkSync(absolute);
-      }
-    }
+    imagePath = await uploadImage(req.file, 'site');
+    await removeImage(existingEvent.image_path);
   }
 
   await query(
@@ -311,12 +285,7 @@ router.post('/evenimente/:id/sterge', requireAuth, async (req, res) => {
     return res.redirect('/admin/evenimente?message=Evenimentul+nu+a+fost+gasit');
   }
 
-  if (existingEvent.image_path && String(existingEvent.image_path).startsWith('/uploads/site/')) {
-    const absolute = path.join(process.cwd(), 'public', existingEvent.image_path.replace(/^\//, ''));
-    if (fs.existsSync(absolute)) {
-      fs.unlinkSync(absolute);
-    }
-  }
+  await removeImage(existingEvent.image_path);
 
   await query('DELETE FROM events WHERE id = $1', [eventId]);
   res.redirect('/admin/evenimente?message=Eveniment+sters');
@@ -463,9 +432,10 @@ router.post('/produse', requireAuth, upload.array('images', 20), async (req, res
   const productId = insert.rows[0].id;
 
   for (const [index, file] of (req.files || []).entries()) {
+    const imagePath = await uploadImage(file, 'products');
     await query(
       'INSERT INTO product_images (product_id, image_path, alt_text, sort_order) VALUES ($1, $2, $3, $4)',
-      [productId, `/uploads/products/${file.filename}`, name, index]
+      [productId, imagePath, name, index]
     );
   }
 
@@ -524,9 +494,10 @@ router.post('/produse/:id', requireAuth, upload.array('images', 20), async (req,
   const currentImageCount = countResult.rows[0].count;
 
   for (const [index, file] of (req.files || []).entries()) {
+    const imagePath = await uploadImage(file, 'products');
     await query(
       'INSERT INTO product_images (product_id, image_path, alt_text, sort_order) VALUES ($1, $2, $3, $4)',
-      [productId, `/uploads/products/${file.filename}`, name, currentImageCount + index]
+      [productId, imagePath, name, currentImageCount + index]
     );
   }
 
@@ -544,12 +515,7 @@ router.post('/produse/:id/sterge', requireAuth, async (req, res) => {
   const images = await query('SELECT * FROM product_images WHERE product_id = $1', [productId]);
 
   for (const image of images.rows) {
-    if (String(image.image_path).startsWith('/uploads/products/')) {
-      const absolute = path.join(process.cwd(), 'public', image.image_path.replace(/^\//, ''));
-      if (fs.existsSync(absolute)) {
-        fs.unlinkSync(absolute);
-      }
-    }
+    await removeImage(image.image_path);
   }
 
   await query('DELETE FROM product_images WHERE product_id = $1', [productId]);
@@ -564,13 +530,7 @@ router.post('/imagini/:id/sterge', requireAuth, async (req, res) => {
   const image = imageResult.rows[0];
 
   if (image) {
-    if (String(image.image_path).startsWith('/uploads/products/')) {
-      const absolute = path.join(process.cwd(), 'public', image.image_path.replace(/^\//, ''));
-      if (fs.existsSync(absolute)) {
-        fs.unlinkSync(absolute);
-      }
-    }
-
+    await removeImage(image.image_path);
     await query('DELETE FROM product_images WHERE id = $1', [imageId]);
   }
 
@@ -661,14 +621,8 @@ router.post('/continut/:sectionKey', requireAuth, uploadContent.single('section_
   const nextCtaSecondary = typeof cta_secondary === 'string' ? cta_secondary : currentCtaSecondary;
 
   if (req.file) {
-    nextImagePath = `/uploads/site/${req.file.filename}`;
-
-    if (currentImagePath && String(currentImagePath).startsWith('/uploads/site/')) {
-      const absolute = path.join(process.cwd(), 'public', currentImagePath.replace(/^\//, ''));
-      if (fs.existsSync(absolute)) {
-        fs.unlinkSync(absolute);
-      }
-    }
+    nextImagePath = await uploadImage(req.file, 'site');
+    await removeImage(currentImagePath);
   }
 
   await query(
