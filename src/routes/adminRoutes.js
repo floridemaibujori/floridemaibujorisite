@@ -447,7 +447,7 @@ router.get('/produse/nou', requireAuth, (req, res) => {
   });
 });
 
-router.post('/produse', requireAuth, upload.array('images', 8), async (req, res) => {
+router.post('/produse', requireAuth, upload.array('images', 20), async (req, res) => {
   const { name, price, description, category, active } = req.body;
   const slug = makeSlug(name);
 
@@ -501,7 +501,7 @@ router.get('/produse/:id/editare', requireAuth, async (req, res) => {
   });
 });
 
-router.post('/produse/:id', requireAuth, upload.array('images', 8), async (req, res) => {
+router.post('/produse/:id', requireAuth, upload.array('images', 20), async (req, res) => {
   const productId = Number(req.params.id);
   const { name, price, description, category, active } = req.body;
   const slug = makeSlug(name);
