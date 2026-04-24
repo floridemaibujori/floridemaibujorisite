@@ -156,8 +156,16 @@ async function dispatchOrderEmails(order, items, contextLabel) {
     } else {
       console.log(`Email trimis (${contextLabel}) pentru comanda ${order.order_number || order.id}.`);
     }
+    return result || { sent: false, reason: 'unknown' };
   } catch (emailError) {
     console.error(`Eroare trimitere email (${contextLabel}):`, emailError.message);
+    return {
+      sent: false,
+      reason: 'send_failed',
+      details: {
+        message: emailError.message
+      }
+    };
   }
 }
 
@@ -482,7 +490,7 @@ router.post('/api/comenzi', async (req, res) => {
       });
     }
 
-    await dispatchOrderEmails(result.order, result.items, 'comanda ramburs');
+    const emailResult = await dispatchOrderEmails(result.order, result.items, 'comanda ramburs');
     console.log('[checkout] order created (ramburs):', result.order.order_number || result.order.id);
 
     return res.json({
@@ -490,7 +498,8 @@ router.post('/api/comenzi', async (req, res) => {
       paymentMethod: 'ramburs',
       orderId: result.order.id,
       orderNumber: result.order.order_number,
-      message: 'Comanda a fost inregistrata cu succes.'
+      message: 'Comanda a fost inregistrata cu succes.',
+      email: emailResult
     });
   } catch (error) {
     console.error('[checkout] create order failed:', error.message);
