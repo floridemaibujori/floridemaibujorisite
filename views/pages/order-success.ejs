@@ -13,6 +13,7 @@
     <% if (paymentInfo) { %>
       <p class="success"><%= paymentInfo %></p>
     <% } %>
+    <p class="small-note" id="checkout-email-debug" hidden></p>
     <p class="lead">Numar comanda: <strong><%= order.order_number || order.id %></strong></p>
     <p>Te contactam telefonic pentru confirmare si detalii de livrare.</p>
 
@@ -72,6 +73,39 @@
   </div>
 </main>
 <script>
+  (function () {
+    const key = 'atelier_bujori_checkout_result';
+    const debugNode = document.getElementById('checkout-email-debug');
+    if (!debugNode) {
+      return;
+    }
+
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) {
+        return;
+      }
+
+      const payload = JSON.parse(raw);
+      if (Number(payload.orderId) !== Number(<%- JSON.stringify(order.id) %>)) {
+        return;
+      }
+
+      if (payload.email && payload.email.sent === false) {
+        const reason = payload.email.reason || 'necunoscut';
+        debugNode.hidden = false;
+        debugNode.textContent = `Debug email: netrimis (${reason}).`;
+      } else if (payload.email && payload.email.sent === true) {
+        debugNode.hidden = false;
+        debugNode.textContent = 'Debug email: trimis cu succes.';
+      }
+    } catch (error) {
+      // Ignore parse/storage errors on the confirmation page.
+    } finally {
+      sessionStorage.removeItem(key);
+    }
+  })();
+
   localStorage.removeItem('atelier_bujori_cart');
   localStorage.removeItem('atelier_bujori_coupon');
 </script>

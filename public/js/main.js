@@ -10,6 +10,7 @@
 
   const CART_KEY = 'atelier_bujori_cart';
   const COUPON_KEY = 'atelier_bujori_coupon';
+  const CHECKOUT_RESULT_KEY = 'atelier_bujori_checkout_result';
   const TOAST_ROOT_ID = 'toast-root';
 
   function toPositiveNumber(value, fallback) {
@@ -627,6 +628,15 @@
         if (data.requiresRedirect && data.url) {
           window.location.href = data.url;
           return;
+        }
+
+        try {
+          sessionStorage.setItem(CHECKOUT_RESULT_KEY, JSON.stringify({
+            orderId: data.orderId,
+            email: data.email || null
+          }));
+        } catch (storageError) {
+          // Ignore storage issues; the order flow should still complete.
         }
 
         clearCart();
