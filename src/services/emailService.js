@@ -10,6 +10,18 @@ function getResendSettings() {
   };
 }
 
+function extractEmailAddress(value) {
+  const text = String(value || '').trim();
+  if (!text) {
+    return '';
+  }
+  const angleMatch = text.match(/<([^>]+)>/);
+  if (angleMatch && angleMatch[1]) {
+    return String(angleMatch[1]).trim();
+  }
+  return text;
+}
+
 async function verifyEmailTransport() {
   const { apiKey, from } = getResendSettings();
   if (!apiKey || !from) {
@@ -307,7 +319,8 @@ function renderCustomerHtml(order, items) {
 
 async function sendOrderEmails({ order, items }) {
   const { apiKey, from } = getResendSettings();
-  const adminEmail = String(process.env.ORDER_NOTIFY_EMAIL || '').trim();
+  const senderEmail = extractEmailAddress(from);
+  const adminEmail = String(process.env.ORDER_NOTIFY_EMAIL || senderEmail).trim();
   const customerEmail = String(order.customer_email || '').trim();
 
   if (!apiKey || !from) {
@@ -321,10 +334,14 @@ async function sendOrderEmails({ order, items }) {
     };
   }
 
-  if (!adminEmail) {
+  if (!adminEmail && !customerEmail) {
     return {
       sent: false,
-      reason: 'missing_admin_email'
+      reason: 'missing_recipients',
+      details: {
+        hasAdminEmail: Boolean(adminEmail),
+        hasCustomerEmail: Boolean(customerEmail)
+      }
     };
   }
 
@@ -348,13 +365,15 @@ async function sendOrderEmails({ order, items }) {
     `Observatii: ${order.customer_note || '-'}`
   ].join('\n');
 
-  await sendResendEmail({
-    to: adminEmail,
-    subject: subjectAdmin,
-    text: textAdmin,
-    html: renderAdminHtml(order, items),
-    headers: { 'X-Entity-Ref-ID': `admin-${order.order_number}` }
-  });
+  if (adminEmail) {
+    await sendResendEmail({
+      to: adminEmail,
+      subject: subjectAdmin,
+      text: textAdmin,
+      html: renderAdminHtml(order, items),
+      headers: { 'X-Entity-Ref-ID': `admin-${order.order_number}` }
+    });
+  }
 
   if (customerEmail) {
     const subjectCustomer = `Confirmare comanda ${order.order_number}`;
