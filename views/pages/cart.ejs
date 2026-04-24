@@ -72,14 +72,17 @@
 
         <fieldset class="full payment-choices">
           <legend>Metoda plata</legend>
-          <label class="pay-option">
+          <label class="pay-option" data-pay-option="ramburs">
             <input type="radio" name="paymentMethod" value="ramburs" checked />
             <span>Ramburs la livrare</span>
           </label>
-          <label class="pay-option">
+          <label class="pay-option" data-pay-option="card">
             <input type="radio" name="paymentMethod" value="card" />
             <span>Card online Stripe (test)</span>
           </label>
+          <p class="small-note" data-preorder-payment-note hidden>
+            Pentru cosuri care contin produse in precomanda, plata se face doar cu cardul.
+          </p>
         </fieldset>
 
         <div class="full btn-col">

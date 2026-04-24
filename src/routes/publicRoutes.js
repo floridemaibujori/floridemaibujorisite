@@ -159,7 +159,7 @@ async function createOrder(payload) {
 
     for (const item of payload.items) {
       const productResult = await client.query(
-        'SELECT id, name, price, active FROM products WHERE id = $1',
+        'SELECT id, name, price, active, availability_mode, preorder_deposit_percent FROM products WHERE id = $1',
         [item.productId]
       );
       const product = productResult.rows[0];
@@ -176,9 +176,16 @@ async function createOrder(payload) {
         productId: product.id,
         productName: product.name,
         productPrice,
+        availabilityMode: product.availability_mode,
+        preorderDepositPercent: Number(product.preorder_deposit_percent || 50),
         quantity: item.qty,
         lineTotal
       });
+    }
+
+    const hasPreorderItems = hydrated.some((item) => item.availabilityMode === 'preorder');
+    if (hasPreorderItems && payload.paymentMethod === 'ramburs') {
+      throw new Error('Produsele in precomanda pot fi achitate doar cu cardul.');
     }
 
     const discountPercent = getCouponDiscountPercent(payload.couponCode);

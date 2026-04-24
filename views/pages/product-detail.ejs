@@ -45,7 +45,7 @@
       <% } %>
       <p><%= product.description %></p>
       <div class="btn-row">
-        <button class="btn btn-primary" data-add-to-cart data-product-id="<%= product.id %>" data-product-name="<%= product.name %>" data-product-price="<%= product.price %>">Adauga in cos</button>
+        <button class="btn btn-primary" data-add-to-cart data-product-id="<%= product.id %>" data-product-name="<%= product.name %>" data-product-price="<%= product.price %>" data-product-availability-mode="<%= product.availability_mode %>" data-product-preorder-deposit-percent="<%= Number(product.preorder_deposit_percent || 50) %>">Adauga in cos</button>
         <a class="btn btn-secondary btn-whatsapp-reserve" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(product.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
       </div>
       <p class="small-note">Pentru comenzi speciale, suna la 0722747762.</p>
@@ -60,12 +60,13 @@
     </div>
     <div class="cards-grid">
       <% related.forEach((item) => { %>
+        <% const relatedIsPreorder = item.availability_mode === 'preorder'; %>
         <article class="product-card card" data-product-card data-product-url="/magazin/produs/<%= item.id %>" tabindex="0" role="link" aria-label="Deschide produsul <%= item.name %>">
           <img src="<%= item.cover_image || '/images/placeholder-peony-2.svg' %>" alt="<%= item.name %>" />
           <h3><%= item.name %></h3>
           <p><%= item.description %></p>
           <div class="btn-mini-row">
-            <button class="btn btn-small" data-add-to-cart data-product-id="<%= item.id %>" data-product-name="<%= item.name %>" data-product-price="<%= item.price %>">Adauga in cos</button>
+            <button class="btn btn-small" data-add-to-cart data-product-id="<%= item.id %>" data-product-name="<%= item.name %>" data-product-price="<%= item.price %>" data-product-availability-mode="<%= relatedIsPreorder ? 'preorder' : 'normal' %>" data-product-preorder-deposit-percent="<%= Number(item.preorder_deposit_percent || 50) %>">Adauga in cos</button>
             <a class="btn btn-ghost btn-small btn-whatsapp-reserve" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(item.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
           </div>
         </article>

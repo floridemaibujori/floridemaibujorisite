@@ -869,6 +869,10 @@ th {
   margin-bottom: 0;
 }
 
+.pay-option.is-disabled {
+  opacity: 0.58;
+}
+
 .order-success-card {
   display: grid;
   gap: 1rem;

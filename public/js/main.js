@@ -12,6 +12,22 @@
   const COUPON_KEY = 'atelier_bujori_coupon';
   const TOAST_ROOT_ID = 'toast-root';
 
+  function toPositiveNumber(value, fallback) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+    return fallback;
+  }
+
+  function isPreorderCartItem(item) {
+    const mode = String(item?.availabilityMode || '').trim().toLowerCase();
+    if (mode === 'preorder') {
+      return true;
+    }
+    return item?.isPreorder === true;
+  }
+
   function getToastRoot() {
     let root = document.getElementById(TOAST_ROOT_ID);
     if (!root) {
@@ -168,11 +184,18 @@
 
   document.querySelectorAll('[data-add-to-cart]').forEach((button) => {
     button.addEventListener('click', function () {
+      const availabilityMode = String(button.dataset.productAvailabilityMode || '').trim().toLowerCase() === 'preorder'
+        ? 'preorder'
+        : 'normal';
       const item = {
         id: Number(button.dataset.productId),
         name: button.dataset.productName,
         price: Number(button.dataset.productPrice),
-        qty: 1
+        qty: 1,
+        availabilityMode,
+        preorderDepositPercent: availabilityMode === 'preorder'
+          ? toPositiveNumber(button.dataset.productPreorderDepositPercent, 50)
+          : 0
       };
 
       const cart = getCart();
@@ -180,6 +203,8 @@
 
       if (existing) {
         existing.qty += 1;
+        existing.availabilityMode = item.availabilityMode;
+        existing.preorderDepositPercent = item.preorderDepositPercent;
       } else {
         cart.push(item);
       }
@@ -198,6 +223,7 @@
   const checkoutForm = document.querySelector('[data-checkout-form]');
   const checkoutError = document.querySelector('[data-checkout-error]');
   const reserveSection = document.querySelector('[data-checkout-reserve]');
+  const preorderPaymentNote = document.querySelector('[data-preorder-payment-note]');
   const modeButtons = document.querySelectorAll('[data-mode-toggle]');
   const couponInput = document.querySelector('[data-coupon-input]');
   const applyCouponButton = document.querySelector('[data-apply-coupon]');
@@ -265,6 +291,33 @@
     return { code, percent };
   }
 
+  function applyCheckoutPaymentRules(cart) {
+    if (!checkoutForm) {
+      return;
+    }
+
+    const hasPreorderItems = cart.some(isPreorderCartItem);
+    const rambursInput = checkoutForm.querySelector('input[name="paymentMethod"][value="ramburs"]');
+    const cardInput = checkoutForm.querySelector('input[name="paymentMethod"][value="card"]');
+    const rambursOption = checkoutForm.querySelector('[data-pay-option="ramburs"]');
+
+    if (rambursInput) {
+      rambursInput.disabled = hasPreorderItems;
+    }
+
+    if (rambursOption) {
+      rambursOption.classList.toggle('is-disabled', hasPreorderItems);
+    }
+
+    if (hasPreorderItems && cardInput) {
+      cardInput.checked = true;
+    }
+
+    if (preorderPaymentNote) {
+      preorderPaymentNote.hidden = !hasPreorderItems;
+    }
+  }
+
   function renderCart() {
     const cart = getCart();
 
@@ -273,6 +326,7 @@
       if (checkoutForm) {
         checkoutForm.querySelector('button[type="submit"]').disabled = true;
       }
+      applyCheckoutPaymentRules(cart);
       updateWhatsAppLinks();
       return;
     }
@@ -353,6 +407,7 @@
       checkoutForm.querySelector('button[type="submit"]').disabled = false;
     }
 
+    applyCheckoutPaymentRules(cart);
     updateWhatsAppLinks();
   }
 
@@ -482,6 +537,18 @@
       }
 
       const formData = new FormData(checkoutForm);
+      const paymentMethod = String(formData.get('paymentMethod') || '');
+      const hasPreorderItems = cart.some(isPreorderCartItem);
+
+      if (hasPreorderItems && paymentMethod !== 'card') {
+        applyCheckoutPaymentRules(cart);
+        if (checkoutError) {
+          checkoutError.hidden = false;
+          checkoutError.textContent = 'Produsele in precomanda pot fi achitate doar cu cardul.';
+        }
+        return;
+      }
+
       const payload = {
         customerName: formData.get('customerName'),
         customerPhone: formData.get('customerPhone'),
@@ -489,7 +556,7 @@
         customerAddress: formData.get('customerAddress'),
         customerCity: formData.get('customerCity'),
         customerNote: formData.get('customerNote'),
-        paymentMethod: formData.get('paymentMethod'),
+        paymentMethod,
         couponCode: getCouponCode(),
         items: cart.map((item) => ({ productId: item.id, qty: item.qty }))
       };
