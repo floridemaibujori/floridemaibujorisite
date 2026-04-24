@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const dns = require('node:dns');
 
 function getSmtpSettings() {
   const user = String(process.env.SMTP_USER || '').trim();
@@ -31,7 +32,19 @@ function makeTransporter() {
     secure,
     family,
     requireTLS: !secure,
-    auth: { user, pass }
+    auth: { user, pass },
+    // Railway can prefer IPv6 even when family is set; force IPv4 DNS lookup.
+    lookup: (hostname, options, callback) => {
+      dns.lookup(
+        hostname,
+        {
+          family,
+          all: false,
+          hints: dns.ADDRCONFIG
+        },
+        callback
+      );
+    }
   });
 }
 
