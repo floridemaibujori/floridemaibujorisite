@@ -1,5 +1,6 @@
 const app = require('./src/app');
 const { initDb } = require('./src/config/db');
+const { verifyEmailTransport } = require('./src/services/emailService');
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -9,6 +10,15 @@ async function start() {
   await initDb();
   server = app.listen(PORT, HOST, () => {
     console.log(`Server pornit pe http://${HOST}:${PORT}`);
+
+    setImmediate(async () => {
+      const smtpCheck = await verifyEmailTransport();
+      if (smtpCheck.ok) {
+        console.log('Email transport OK:', smtpCheck.details);
+      } else {
+        console.warn(`Email transport indisponibil: ${smtpCheck.reason}`, smtpCheck.details || {});
+      }
+    });
   });
 }
 

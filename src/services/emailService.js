@@ -1,17 +1,74 @@
 const nodemailer = require('nodemailer');
 
-function makeTransporter() {
+function getSmtpSettings() {
   const user = String(process.env.SMTP_USER || '').trim();
   const pass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '').trim();
+  const host = String(process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+  const port = Number(process.env.SMTP_PORT || 587);
+  const secure = String(process.env.SMTP_SECURE || '').trim().toLowerCase() === 'true' || port === 465;
+
+  return {
+    user,
+    pass,
+    host,
+    port,
+    secure
+  };
+}
+
+function makeTransporter() {
+  const { user, pass, host, port, secure } = getSmtpSettings();
 
   if (!user || !pass) {
     return null;
   }
 
   return nodemailer.createTransport({
-    service: 'gmail',
+    host,
+    port,
+    secure,
+    requireTLS: !secure,
     auth: { user, pass }
   });
+}
+
+async function verifyEmailTransport() {
+  const { user, pass, host, port, secure } = getSmtpSettings();
+  if (!user || !pass) {
+    return {
+      ok: false,
+      reason: 'missing_credentials',
+      details: {
+        hasSmtpUser: Boolean(user),
+        hasSmtpPass: Boolean(pass)
+      }
+    };
+  }
+
+  const transporter = makeTransporter();
+  if (!transporter) {
+    return { ok: false, reason: 'missing_credentials' };
+  }
+
+  try {
+    await transporter.verify();
+    return {
+      ok: true,
+      reason: 'ok',
+      details: { host, port, secure }
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: 'verify_failed',
+      details: {
+        host,
+        port,
+        secure,
+        message: error.message
+      }
+    };
+  }
 }
 
 function formatItems(items) {
@@ -261,8 +318,7 @@ function renderCustomerHtml(order, items) {
 }
 
 async function sendOrderEmails({ order, items }) {
-  const smtpUser = String(process.env.SMTP_USER || '').trim();
-  const smtpPass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '').trim();
+  const { user: smtpUser, pass: smtpPass } = getSmtpSettings();
   const adminEmail = String(process.env.ORDER_NOTIFY_EMAIL || smtpUser).trim();
   const customerEmail = String(order.customer_email || '').trim();
 
@@ -348,4 +404,4 @@ async function sendOrderEmails({ order, items }) {
   return { sent: true, reason: 'ok' };
 }
 
-module.exports = { sendOrderEmails };
+module.exports = { sendOrderEmails, verifyEmailTransport };
