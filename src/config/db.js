@@ -31,6 +31,11 @@ async function initDb() {
       price NUMERIC(12,2) NOT NULL,
       description TEXT NOT NULL,
       category TEXT NOT NULL,
+      availability_mode TEXT NOT NULL DEFAULT 'normal',
+      preorder_start_date DATE,
+      preorder_end_date DATE,
+      preorder_deposit_percent NUMERIC(5,2) NOT NULL DEFAULT 50,
+      preorder_note TEXT,
       active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -121,6 +126,31 @@ async function initDb() {
   await query(`
     ALTER TABLE site_content
     ADD COLUMN IF NOT EXISTS image_path TEXT
+  `);
+
+  await query(`
+    ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS availability_mode TEXT NOT NULL DEFAULT 'normal'
+  `);
+
+  await query(`
+    ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS preorder_start_date DATE
+  `);
+
+  await query(`
+    ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS preorder_end_date DATE
+  `);
+
+  await query(`
+    ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS preorder_deposit_percent NUMERIC(5,2) NOT NULL DEFAULT 50
+  `);
+
+  await query(`
+    ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS preorder_note TEXT
   `);
 
   const adminResult = await query('SELECT COUNT(*)::int AS count FROM admins');

@@ -34,6 +34,43 @@ const uploadContent = multer({
   }
 });
 
+function redirectWithMessage(req, res, fallbackPath, message) {
+  const referer = req.get('referer');
+  const base = referer && referer.includes('/admin') ? referer : fallbackPath;
+  const separator = base.includes('?') ? '&' : '?';
+  return res.redirect(`${base}${separator}message=${encodeURIComponent(message)}`);
+}
+
+function parseProductAvailability(body) {
+  const availabilityMode = body.availability_mode === 'preorder' ? 'preorder' : 'normal';
+
+  if (availabilityMode === 'normal') {
+    return {
+      availabilityMode,
+      preorderStartDate: null,
+      preorderEndDate: null,
+      preorderDepositPercent: 0,
+      preorderNote: null
+    };
+  }
+
+  const preorderStartDate = String(body.preorder_start_date || '').trim() || null;
+  const preorderEndDate = String(body.preorder_end_date || '').trim() || null;
+  const preorderNote = String(body.preorder_note || '').trim() || null;
+  const rawDeposit = Number(body.preorder_deposit_percent || 50);
+  const preorderDepositPercent = Number.isFinite(rawDeposit)
+    ? Math.min(90, Math.max(10, rawDeposit))
+    : 50;
+
+  return {
+    availabilityMode,
+    preorderStartDate,
+    preorderEndDate,
+    preorderDepositPercent,
+    preorderNote
+  };
+}
+
 async function getProductsForAdmin() {
   const result = await query(`
     SELECT p.*, img.image_path AS cover_image
@@ -199,26 +236,31 @@ router.get('/evenimente/nou', requireAuth, (req, res) => {
 });
 
 router.post('/evenimente', requireAuth, uploadContent.single('image'), async (req, res) => {
-  const { title, event_date, location, description, active, sort_order } = req.body;
-  const imagePath = req.file ? await uploadImage(req.file, 'site') : null;
+  try {
+    const { title, event_date, location, description, active, sort_order } = req.body;
+    const imagePath = req.file ? await uploadImage(req.file, 'site') : null;
 
-  await query(
-    `
-    INSERT INTO events (title, event_date, location, description, image_path, active, sort_order, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-    `,
-    [
-      String(title || '').trim(),
-      event_date,
-      String(location || '').trim(),
-      String(description || '').trim(),
-      imagePath,
-      active === '1',
-      Number(sort_order || 0)
-    ]
-  );
+    await query(
+      `
+      INSERT INTO events (title, event_date, location, description, image_path, active, sort_order, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      `,
+      [
+        String(title || '').trim(),
+        event_date,
+        String(location || '').trim(),
+        String(description || '').trim(),
+        imagePath,
+        active === '1',
+        Number(sort_order || 0)
+      ]
+    );
 
-  res.redirect('/admin/evenimente?message=Eveniment+adaugat');
+    res.redirect('/admin/evenimente?message=Eveniment+adaugat');
+  } catch (error) {
+    console.error('Eroare upload eveniment:', error.message);
+    return redirectWithMessage(req, res, '/admin/evenimente/nou', `Eroare upload imagine eveniment: ${error.message}`);
+  }
 });
 
 router.get('/evenimente/:id/editare', requireAuth, async (req, res) => {
@@ -240,40 +282,45 @@ router.get('/evenimente/:id/editare', requireAuth, async (req, res) => {
 });
 
 router.post('/evenimente/:id', requireAuth, uploadContent.single('image'), async (req, res) => {
-  const eventId = Number(req.params.id);
-  const { title, event_date, location, description, active, sort_order } = req.body;
-  const existingResult = await query('SELECT image_path FROM events WHERE id = $1', [eventId]);
-  const existingEvent = existingResult.rows[0];
+  try {
+    const eventId = Number(req.params.id);
+    const { title, event_date, location, description, active, sort_order } = req.body;
+    const existingResult = await query('SELECT image_path FROM events WHERE id = $1', [eventId]);
+    const existingEvent = existingResult.rows[0];
 
-  if (!existingEvent) {
-    return res.redirect('/admin/evenimente?message=Evenimentul+nu+a+fost+gasit');
+    if (!existingEvent) {
+      return res.redirect('/admin/evenimente?message=Evenimentul+nu+a+fost+gasit');
+    }
+
+    let imagePath = existingEvent.image_path || null;
+    if (req.file) {
+      imagePath = await uploadImage(req.file, 'site');
+      await removeImage(existingEvent.image_path);
+    }
+
+    await query(
+      `
+      UPDATE events
+      SET title = $1, event_date = $2, location = $3, description = $4, image_path = $5, active = $6, sort_order = $7, updated_at = NOW()
+      WHERE id = $8
+      `,
+      [
+        String(title || '').trim(),
+        event_date,
+        String(location || '').trim(),
+        String(description || '').trim(),
+        imagePath,
+        active === '1',
+        Number(sort_order || 0),
+        eventId
+      ]
+    );
+
+    res.redirect('/admin/evenimente?message=Eveniment+actualizat');
+  } catch (error) {
+    console.error('Eroare upload editare eveniment:', error.message);
+    return redirectWithMessage(req, res, '/admin/evenimente', `Eroare upload imagine eveniment: ${error.message}`);
   }
-
-  let imagePath = existingEvent.image_path || null;
-  if (req.file) {
-    imagePath = await uploadImage(req.file, 'site');
-    await removeImage(existingEvent.image_path);
-  }
-
-  await query(
-    `
-    UPDATE events
-    SET title = $1, event_date = $2, location = $3, description = $4, image_path = $5, active = $6, sort_order = $7, updated_at = NOW()
-    WHERE id = $8
-    `,
-    [
-      String(title || '').trim(),
-      event_date,
-      String(location || '').trim(),
-      String(description || '').trim(),
-      imagePath,
-      active === '1',
-      Number(sort_order || 0),
-      eventId
-    ]
-  );
-
-  res.redirect('/admin/evenimente?message=Eveniment+actualizat');
 });
 
 router.post('/evenimente/:id/sterge', requireAuth, async (req, res) => {
@@ -417,29 +464,60 @@ router.get('/produse/nou', requireAuth, (req, res) => {
 });
 
 router.post('/produse', requireAuth, upload.array('images', 20), async (req, res) => {
-  const { name, price, description, category, active } = req.body;
-  const slug = makeSlug(name);
+  try {
+    const { name, price, description, category, active } = req.body;
+    const availability = parseProductAvailability(req.body);
+    const slug = makeSlug(name);
 
-  const insert = await query(
-    `
-    INSERT INTO products (name, slug, price, description, category, active, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-    RETURNING id
-    `,
-    [name, slug, Number(price || 0), description, category, active === '1']
-  );
+    if (
+      availability.availabilityMode === 'preorder' &&
+      (!availability.preorderStartDate || !availability.preorderEndDate)
+    ) {
+      return redirectWithMessage(
+        req,
+        res,
+        '/admin/produse/nou',
+        'Pentru precomanda trebuie completat intervalul de livrare.'
+      );
+    }
 
-  const productId = insert.rows[0].id;
-
-  for (const [index, file] of (req.files || []).entries()) {
-    const imagePath = await uploadImage(file, 'products');
-    await query(
-      'INSERT INTO product_images (product_id, image_path, alt_text, sort_order) VALUES ($1, $2, $3, $4)',
-      [productId, imagePath, name, index]
+    const insert = await query(
+      `
+      INSERT INTO products
+      (name, slug, price, description, category, availability_mode, preorder_start_date, preorder_end_date, preorder_deposit_percent, preorder_note, active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+      RETURNING id
+      `,
+      [
+        name,
+        slug,
+        Number(price || 0),
+        description,
+        category,
+        availability.availabilityMode,
+        availability.preorderStartDate,
+        availability.preorderEndDate,
+        availability.preorderDepositPercent,
+        availability.preorderNote,
+        active === '1'
+      ]
     );
-  }
 
-  res.redirect('/admin/produse?message=Produs+adaugat+cu+succes');
+    const productId = insert.rows[0].id;
+
+    for (const [index, file] of (req.files || []).entries()) {
+      const imagePath = await uploadImage(file, 'products');
+      await query(
+        'INSERT INTO product_images (product_id, image_path, alt_text, sort_order) VALUES ($1, $2, $3, $4)',
+        [productId, imagePath, name, index]
+      );
+    }
+
+    res.redirect('/admin/produse?message=Produs+adaugat+cu+succes');
+  } catch (error) {
+    console.error('Eroare upload produs nou:', error.message);
+    return redirectWithMessage(req, res, '/admin/produse/nou', `Eroare upload imagini produs: ${error.message}`);
+  }
 });
 
 router.get('/produse/:id/editare', requireAuth, async (req, res) => {
@@ -472,36 +550,79 @@ router.get('/produse/:id/editare', requireAuth, async (req, res) => {
 });
 
 router.post('/produse/:id', requireAuth, upload.array('images', 20), async (req, res) => {
-  const productId = Number(req.params.id);
-  const { name, price, description, category, active } = req.body;
-  const slug = makeSlug(name);
+  try {
+    const productId = Number(req.params.id);
+    const { name, price, description, category, active } = req.body;
+    const availability = parseProductAvailability(req.body);
+    const slug = makeSlug(name);
 
-  const existing = await query('SELECT id FROM products WHERE id = $1', [productId]);
-  if (!existing.rows[0]) {
-    return res.redirect('/admin/produse?message=Produsul+nu+a+fost+gasit');
-  }
+    const existing = await query('SELECT id FROM products WHERE id = $1', [productId]);
+    if (!existing.rows[0]) {
+      return res.redirect('/admin/produse?message=Produsul+nu+a+fost+gasit');
+    }
 
-  await query(
-    `
-    UPDATE products
-    SET name = $1, slug = $2, price = $3, description = $4, category = $5, active = $6, updated_at = NOW()
-    WHERE id = $7
-    `,
-    [name, slug, Number(price || 0), description, category, active === '1', productId]
-  );
+    if (
+      availability.availabilityMode === 'preorder' &&
+      (!availability.preorderStartDate || !availability.preorderEndDate)
+    ) {
+      return redirectWithMessage(
+        req,
+        res,
+        `/admin/produse/${productId}/editare`,
+        'Pentru precomanda trebuie completat intervalul de livrare.'
+      );
+    }
 
-  const countResult = await query('SELECT COUNT(*)::int AS count FROM product_images WHERE product_id = $1', [productId]);
-  const currentImageCount = countResult.rows[0].count;
-
-  for (const [index, file] of (req.files || []).entries()) {
-    const imagePath = await uploadImage(file, 'products');
     await query(
-      'INSERT INTO product_images (product_id, image_path, alt_text, sort_order) VALUES ($1, $2, $3, $4)',
-      [productId, imagePath, name, currentImageCount + index]
+      `
+      UPDATE products
+      SET
+        name = $1,
+        slug = $2,
+        price = $3,
+        description = $4,
+        category = $5,
+        availability_mode = $6,
+        preorder_start_date = $7,
+        preorder_end_date = $8,
+        preorder_deposit_percent = $9,
+        preorder_note = $10,
+        active = $11,
+        updated_at = NOW()
+      WHERE id = $12
+      `,
+      [
+        name,
+        slug,
+        Number(price || 0),
+        description,
+        category,
+        availability.availabilityMode,
+        availability.preorderStartDate,
+        availability.preorderEndDate,
+        availability.preorderDepositPercent,
+        availability.preorderNote,
+        active === '1',
+        productId
+      ]
     );
-  }
 
-  res.redirect('/admin/produse?message=Produs+actualizat');
+    const countResult = await query('SELECT COUNT(*)::int AS count FROM product_images WHERE product_id = $1', [productId]);
+    const currentImageCount = countResult.rows[0].count;
+
+    for (const [index, file] of (req.files || []).entries()) {
+      const imagePath = await uploadImage(file, 'products');
+      await query(
+        'INSERT INTO product_images (product_id, image_path, alt_text, sort_order) VALUES ($1, $2, $3, $4)',
+        [productId, imagePath, name, currentImageCount + index]
+      );
+    }
+
+    res.redirect('/admin/produse?message=Produs+actualizat');
+  } catch (error) {
+    console.error('Eroare upload editare produs:', error.message);
+    return redirectWithMessage(req, res, '/admin/produse', `Eroare upload imagini produs: ${error.message}`);
+  }
 });
 
 router.post('/produse/:id/sterge', requireAuth, async (req, res) => {
@@ -607,34 +728,59 @@ router.get('/continut', requireAuth, async (req, res) => {
 });
 
 router.post('/continut/:sectionKey', requireAuth, uploadContent.single('section_image'), async (req, res) => {
-  const { title, subtitle, body, cta_primary, cta_secondary } = req.body;
-  const sectionKey = String(req.params.sectionKey || '').trim();
-  const currentResult = await query(
-    'SELECT image_path, cta_primary, cta_secondary FROM site_content WHERE section_key = $1',
-    [sectionKey]
-  );
-  const currentImagePath = currentResult.rows[0]?.image_path || null;
-  const currentCtaPrimary = currentResult.rows[0]?.cta_primary || '';
-  const currentCtaSecondary = currentResult.rows[0]?.cta_secondary || '';
-  let nextImagePath = currentImagePath;
-  const nextCtaPrimary = typeof cta_primary === 'string' ? cta_primary : currentCtaPrimary;
-  const nextCtaSecondary = typeof cta_secondary === 'string' ? cta_secondary : currentCtaSecondary;
+  try {
+    const { title, subtitle, body, cta_primary, cta_secondary } = req.body;
+    const sectionKey = String(req.params.sectionKey || '').trim();
+    const currentResult = await query(
+      'SELECT image_path, cta_primary, cta_secondary FROM site_content WHERE section_key = $1',
+      [sectionKey]
+    );
+    const currentImagePath = currentResult.rows[0]?.image_path || null;
+    const currentCtaPrimary = currentResult.rows[0]?.cta_primary || '';
+    const currentCtaSecondary = currentResult.rows[0]?.cta_secondary || '';
+    let nextImagePath = currentImagePath;
+    const nextCtaPrimary = typeof cta_primary === 'string' ? cta_primary : currentCtaPrimary;
+    const nextCtaSecondary = typeof cta_secondary === 'string' ? cta_secondary : currentCtaSecondary;
 
-  if (req.file) {
-    nextImagePath = await uploadImage(req.file, 'site');
-    await removeImage(currentImagePath);
+    if (req.file) {
+      nextImagePath = await uploadImage(req.file, 'site');
+      await removeImage(currentImagePath);
+    }
+
+    await query(
+      `
+      UPDATE site_content
+      SET title = $1, subtitle = $2, body = $3, cta_primary = $4, cta_secondary = $5, image_path = $6, updated_at = NOW()
+      WHERE section_key = $7
+      `,
+      [title, subtitle, body, nextCtaPrimary, nextCtaSecondary, nextImagePath, sectionKey]
+    );
+
+    res.redirect('/admin/continut?message=Sectiune+actualizata');
+  } catch (error) {
+    console.error('Eroare upload continut:', error.message);
+    return redirectWithMessage(req, res, '/admin/continut', `Eroare upload imagine sectiune: ${error.message}`);
+  }
+});
+
+router.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    let message = 'Eroare la upload.';
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      message = 'Fisier prea mare. Incearca o imagine mai mica.';
+    } else if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      message = 'Ai trimis un camp de fisiere invalid.';
+    } else if (error.code === 'LIMIT_FILE_COUNT') {
+      message = 'Ai depasit numarul maxim de imagini pentru un upload.';
+    }
+    return redirectWithMessage(req, res, '/admin', message);
   }
 
-  await query(
-    `
-    UPDATE site_content
-    SET title = $1, subtitle = $2, body = $3, cta_primary = $4, cta_secondary = $5, image_path = $6, updated_at = NOW()
-    WHERE section_key = $7
-    `,
-    [title, subtitle, body, nextCtaPrimary, nextCtaSecondary, nextImagePath, sectionKey]
-  );
+  if (error && /Se accepta doar fisiere imagine/i.test(error.message || '')) {
+    return redirectWithMessage(req, res, '/admin', 'Upload invalid: se accepta doar fisiere imagine.');
+  }
 
-  res.redirect('/admin/continut?message=Sectiune+actualizata');
+  return next(error);
 });
 
 module.exports = router;

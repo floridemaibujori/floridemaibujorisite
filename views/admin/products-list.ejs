@@ -35,7 +35,13 @@
               <td><%= product.name %></td>
               <td><%= product.category %></td>
               <td><%= Number(product.price).toFixed(2) %> lei</td>
-              <td><%= product.active ? 'Activ' : 'Inactiv' %></td>
+              <td>
+                <%= product.active ? 'Activ' : 'Inactiv' %>
+                <% if (product.availability_mode === 'preorder') { %>
+                  <br />
+                  <span class="small-note">Precomanda</span>
+                <% } %>
+              </td>
               <td>
                 <div class="btn-mini-row">
                   <a class="btn btn-small" href="/admin/produse/<%= product.id %>/editare">Editare</a>

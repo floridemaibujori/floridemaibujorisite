@@ -34,6 +34,35 @@
         </select>
       </label>
 
+      <label>
+        Tip comanda
+        <select name="availability_mode" data-availability-mode>
+          <option value="normal" <%= (!product || product.availability_mode !== 'preorder') ? 'selected' : '' %>>Comanda normala</option>
+          <option value="preorder" <%= product?.availability_mode === 'preorder' ? 'selected' : '' %>>Precomanda (avans + rest la livrare)</option>
+        </select>
+      </label>
+
+      <div class="full preorder-fields" data-preorder-fields>
+        <div class="form-grid">
+          <label>
+            Data inceput livrare precomanda
+            <input type="date" name="preorder_start_date" value="<%= product?.preorder_start_date ? new Date(product.preorder_start_date).toISOString().slice(0, 10) : '' %>" />
+          </label>
+          <label>
+            Data final livrare precomanda
+            <input type="date" name="preorder_end_date" value="<%= product?.preorder_end_date ? new Date(product.preorder_end_date).toISOString().slice(0, 10) : '' %>" />
+          </label>
+          <label>
+            Avans (% platit acum)
+            <input type="number" min="10" max="90" step="1" name="preorder_deposit_percent" value="<%= product?.availability_mode === 'preorder' ? Number(product.preorder_deposit_percent || 50) : 50 %>" />
+          </label>
+          <label class="full">
+            Mesaj precomanda (optional)
+            <input type="text" name="preorder_note" value="<%= product?.preorder_note || '' %>" placeholder="Ex: Livrare estimata in intervalul selectat." />
+          </label>
+        </div>
+      </div>
+
       <label class="full">
         Descriere
         <textarea name="description" rows="5" required><%= product?.description || '' %></textarea>
@@ -122,8 +151,8 @@
         <% reviews.forEach((review) => { %>
           <article class="card">
             <h3><%= review.title %></h3>
-            <p class="small-note"><strong><%= review.reviewer_name %></strong> · <%= review.reviewer_email %></p>
-            <p class="small-note">Rating: <%= review.rating %>/5 · <%= review.is_public ? 'Public' : 'Ascuns' %></p>
+            <p class="small-note"><strong><%= review.reviewer_name %></strong> | <%= review.reviewer_email %></p>
+            <p class="small-note">Rating: <%= review.rating %>/5 | <%= review.is_public ? 'Public' : 'Ascuns' %></p>
             <p><%= review.message %></p>
             <form action="/admin/produse/<%= product.id %>/recenzii/<%= review.id %>" method="post" class="form-grid">
               <label>
@@ -170,4 +199,24 @@
     </section>
   <% } %>
 </main>
+<script>
+  (function () {
+    const modeSelect = document.querySelector('[data-availability-mode]');
+    const preorderBlock = document.querySelector('[data-preorder-fields]');
+    if (!modeSelect || !preorderBlock) return;
+
+    const dateInputs = preorderBlock.querySelectorAll('input[type="date"]');
+
+    function syncPreorderVisibility() {
+      const isPreorder = modeSelect.value === 'preorder';
+      preorderBlock.classList.toggle('is-hidden', !isPreorder);
+      dateInputs.forEach((input) => {
+        input.required = isPreorder;
+      });
+    }
+
+    modeSelect.addEventListener('change', syncPreorderVisibility);
+    syncPreorderVisibility();
+  })();
+</script>
 <%- include('footer') %>

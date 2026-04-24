@@ -1,5 +1,9 @@
-﻿<%- include('../partials/head') %>
+<%- include('../partials/head') %>
 <%- include('../partials/header', { currentPath, company }) %>
+<% const isPreorder = product.availability_mode === 'preorder'; %>
+<% const depositPercent = Number(product.preorder_deposit_percent || 50); %>
+<% const depositAmount = Number(product.price) * (depositPercent / 100); %>
+<% const remainingAmount = Number(product.price) - depositAmount; %>
 <main class="section">
   <div class="container two-col product-detail-layout">
     <div class="card image-gallery" data-image-gallery>
@@ -24,6 +28,21 @@
       <p class="category"><%= product.category %></p>
       <h1><%= product.name %></h1>
       <p class="price"><%= Number(product.price).toFixed(2) %> lei</p>
+      <% if (isPreorder) { %>
+        <p class="preorder-note">
+          Produsul nu este in stoc acum.
+          <strong><%= depositAmount.toFixed(2) %> lei acum</strong>,
+          <strong><%= remainingAmount.toFixed(2) %> lei la livrare</strong>.
+        </p>
+        <% if (product.preorder_start_date && product.preorder_end_date) { %>
+          <p class="small-note">
+            Interval estimat livrare: <%= new Date(product.preorder_start_date).toLocaleDateString('ro-RO') %> - <%= new Date(product.preorder_end_date).toLocaleDateString('ro-RO') %>
+          </p>
+        <% } %>
+        <% if (product.preorder_note) { %>
+          <p class="small-note"><%= product.preorder_note %></p>
+        <% } %>
+      <% } %>
       <p><%= product.description %></p>
       <div class="btn-row">
         <button class="btn btn-primary" data-add-to-cart data-product-id="<%= product.id %>" data-product-name="<%= product.name %>" data-product-price="<%= product.price %>">Adauga in cos</button>
@@ -75,7 +94,7 @@
         <article class="card quote-card premium-review-card">
           <div class="stars" aria-label="Rating <%= review.rating %> din 5">
             <% for (let i = 1; i <= 5; i++) { %>
-              <span class="<%= i <= review.rating ? 'star-on' : 'star-off' %>">★</span>
+              <span class="<%= i <= review.rating ? 'star-on' : 'star-off' %>">&#9733;</span>
             <% } %>
           </div>
           <h3><%= review.title %></h3>
@@ -122,4 +141,5 @@
   </section>
 </main>
 <%- include('../partials/footer', { company }) %>
+
 

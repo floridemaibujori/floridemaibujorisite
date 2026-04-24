@@ -24,6 +24,10 @@
 
   <div class="container cards-grid shop-grid">
     <% products.forEach((product) => { %>
+      <% const isPreorder = product.availability_mode === 'preorder'; %>
+      <% const depositPercent = Number(product.preorder_deposit_percent || 50); %>
+      <% const depositAmount = Number(product.price) * (depositPercent / 100); %>
+      <% const remainingAmount = Number(product.price) - depositAmount; %>
       <article
         class="product-card card"
         data-product-card
@@ -38,8 +42,20 @@
         <p class="category"><%= product.category %></p>
         <h3><%= product.name %></h3>
         <p><%= product.description %></p>
+        <% if (isPreorder) { %>
+          <p class="preorder-note">
+            Produs in precomanda:
+            <strong><%= depositAmount.toFixed(2) %> lei acum</strong>,
+            <strong><%= remainingAmount.toFixed(2) %> lei la livrare</strong>.
+          </p>
+          <% if (product.preorder_start_date && product.preorder_end_date) { %>
+            <p class="small-note">
+              Livrare estimata: <%= new Date(product.preorder_start_date).toLocaleDateString('ro-RO') %> - <%= new Date(product.preorder_end_date).toLocaleDateString('ro-RO') %>
+            </p>
+          <% } %>
+        <% } %>
         <div class="product-meta">
-          <strong><%= Number(product.price).toFixed(2) %> lei</strong>
+          <strong><%= Number(product.price).toFixed(2) %> lei <%= isPreorder ? '(pret total)' : '' %></strong>
           <div class="btn-mini-row">
             <button class="btn btn-small" data-add-to-cart data-product-id="<%= product.id %>" data-product-name="<%= product.name %>" data-product-price="<%= product.price %>">Adauga in cos</button>
             <a class="btn btn-ghost btn-small btn-whatsapp-reserve" target="_blank" rel="noreferrer" href="<%= company.whatsappLink %>?text=Salut!%20Doresc%20sa%20rezerv%20produsul%20<%= encodeURIComponent(product.name) %>" data-notify data-notify-text="Se deschide WhatsApp pentru rezervare.">Rezerva pe WhatsApp</a>
