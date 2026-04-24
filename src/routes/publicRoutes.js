@@ -148,20 +148,17 @@ function normalizeItems(items) {
     .filter((item) => item.productId > 0 && item.qty > 0);
 }
 
-function dispatchOrderEmails(order, items, contextLabel) {
-  setImmediate(() => {
-    sendOrderEmails({ order, items })
-      .then((result) => {
-        if (!result?.sent) {
-          console.warn(`Email netrimis (${contextLabel}): ${result?.reason || 'unknown'}`, result?.details || {});
-        } else {
-          console.log(`Email trimis (${contextLabel}) pentru comanda ${order.order_number || order.id}.`);
-        }
-      })
-      .catch((emailError) => {
-        console.error(`Eroare trimitere email (${contextLabel}):`, emailError.message);
-      });
-  });
+async function dispatchOrderEmails(order, items, contextLabel) {
+  try {
+    const result = await sendOrderEmails({ order, items });
+    if (!result?.sent) {
+      console.warn(`Email netrimis (${contextLabel}): ${result?.reason || 'unknown'}`, result?.details || {});
+    } else {
+      console.log(`Email trimis (${contextLabel}) pentru comanda ${order.order_number || order.id}.`);
+    }
+  } catch (emailError) {
+    console.error(`Eroare trimitere email (${contextLabel}):`, emailError.message);
+  }
 }
 
 async function createOrder(payload) {
@@ -480,7 +477,7 @@ router.post('/api/comenzi', async (req, res) => {
       });
     }
 
-    dispatchOrderEmails(result.order, result.items, 'comanda ramburs');
+    await dispatchOrderEmails(result.order, result.items, 'comanda ramburs');
 
     return res.json({
       ok: true,
@@ -548,7 +545,7 @@ router.get('/comanda/plata-succes', async (req, res) => {
     const updatedOrder = updatedOrderResult.rows[0];
 
     if (!wasPaidBefore && ['platit', 'avans platit'].includes(updatedOrder.payment_status)) {
-      dispatchOrderEmails(updatedOrder, itemsResult.rows, 'plata stripe');
+      await dispatchOrderEmails(updatedOrder, itemsResult.rows, 'plata stripe');
     }
 
     return res.render('pages/order-success', {
