@@ -1,6 +1,11 @@
+const dns = require('node:dns');
 const app = require('./src/app');
 const { initDb } = require('./src/config/db');
 const { verifyEmailTransport } = require('./src/services/emailService');
+
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
