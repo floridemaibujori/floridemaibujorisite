@@ -6,18 +6,20 @@ function getSmtpSettings() {
   const host = String(process.env.SMTP_HOST || 'smtp.gmail.com').trim();
   const port = Number(process.env.SMTP_PORT || 587);
   const secure = String(process.env.SMTP_SECURE || '').trim().toLowerCase() === 'true' || port === 465;
+  const family = Number(process.env.SMTP_FAMILY || 4) === 6 ? 6 : 4;
 
   return {
     user,
     pass,
     host,
     port,
-    secure
+    secure,
+    family
   };
 }
 
 function makeTransporter() {
-  const { user, pass, host, port, secure } = getSmtpSettings();
+  const { user, pass, host, port, secure, family } = getSmtpSettings();
 
   if (!user || !pass) {
     return null;
@@ -27,13 +29,14 @@ function makeTransporter() {
     host,
     port,
     secure,
+    family,
     requireTLS: !secure,
     auth: { user, pass }
   });
 }
 
 async function verifyEmailTransport() {
-  const { user, pass, host, port, secure } = getSmtpSettings();
+  const { user, pass, host, port, secure, family } = getSmtpSettings();
   if (!user || !pass) {
     return {
       ok: false,
@@ -55,7 +58,7 @@ async function verifyEmailTransport() {
     return {
       ok: true,
       reason: 'ok',
-      details: { host, port, secure }
+      details: { host, port, secure, family }
     };
   } catch (error) {
     return {
@@ -65,6 +68,7 @@ async function verifyEmailTransport() {
         host,
         port,
         secure,
+        family,
         message: error.message
       }
     };
