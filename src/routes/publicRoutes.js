@@ -396,6 +396,7 @@ router.get('/cos', (req, res) => {
 });
 
 router.post('/api/comenzi', async (req, res) => {
+  console.log('[checkout] POST /api/comenzi start');
   const {
     customerName,
     customerPhone,
@@ -409,19 +410,23 @@ router.post('/api/comenzi', async (req, res) => {
   } = req.body;
 
   if (!customerName || !customerPhone || !customerEmail || !customerAddress || !customerCity) {
+    console.warn('[checkout] invalid payload: missing required fields');
     return res.status(400).json({ ok: false, message: 'Completeaza campurile obligatorii, inclusiv email.' });
   }
 
   if (!['ramburs', 'card'].includes(paymentMethod)) {
+    console.warn('[checkout] invalid payment method:', paymentMethod);
     return res.status(400).json({ ok: false, message: 'Metoda de plata invalida.' });
   }
 
   if (paymentMethod === 'card' && !stripe) {
+    console.error('[checkout] stripe missing configuration for card payment');
     return res.status(500).json({ ok: false, message: 'Stripe nu este configurat pe server.' });
   }
 
   const normalizedItems = normalizeItems(items);
   if (!normalizedItems.length) {
+    console.warn('[checkout] empty cart payload');
     return res.status(400).json({ ok: false, message: 'Cosul este gol.' });
   }
 
@@ -478,6 +483,7 @@ router.post('/api/comenzi', async (req, res) => {
     }
 
     await dispatchOrderEmails(result.order, result.items, 'comanda ramburs');
+    console.log('[checkout] order created (ramburs):', result.order.order_number || result.order.id);
 
     return res.json({
       ok: true,
@@ -487,11 +493,13 @@ router.post('/api/comenzi', async (req, res) => {
       message: 'Comanda a fost inregistrata cu succes.'
     });
   } catch (error) {
+    console.error('[checkout] create order failed:', error.message);
     return res.status(400).json({ ok: false, message: error.message || 'Nu am putut salva comanda.' });
   }
 });
 
 router.get('/comanda/plata-succes', async (req, res) => {
+  console.log('[checkout] GET /comanda/plata-succes start');
   if (!stripe) {
     return res.redirect('/cos');
   }
@@ -547,6 +555,7 @@ router.get('/comanda/plata-succes', async (req, res) => {
     if (!wasPaidBefore && ['platit', 'avans platit'].includes(updatedOrder.payment_status)) {
       await dispatchOrderEmails(updatedOrder, itemsResult.rows, 'plata stripe');
     }
+    console.log('[checkout] payment success completed for order:', updatedOrder.order_number || updatedOrder.id);
 
     return res.render('pages/order-success', {
       pageTitle: 'Comanda platita',
