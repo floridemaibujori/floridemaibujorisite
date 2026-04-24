@@ -1,90 +1,61 @@
-const nodemailer = require('nodemailer');
-const dns = require('node:dns');
-
-function getSmtpSettings() {
-  const user = String(process.env.SMTP_USER || '').trim();
-  const pass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '').trim();
-  const host = String(process.env.SMTP_HOST || 'smtp.gmail.com').trim();
-  const port = Number(process.env.SMTP_PORT || 587);
-  const secure = String(process.env.SMTP_SECURE || '').trim().toLowerCase() === 'true' || port === 465;
-  const family = Number(process.env.SMTP_FAMILY || 4) === 6 ? 6 : 4;
+function getResendSettings() {
+  const apiKey = String(process.env.RESEND_API_KEY || '').trim();
+  const from = String(process.env.EMAIL_FROM || process.env.RESEND_FROM || '').trim();
+  const replyTo = String(process.env.EMAIL_REPLY_TO || '').trim();
 
   return {
-    user,
-    pass,
-    host,
-    port,
-    secure,
-    family
+    apiKey,
+    from,
+    replyTo
   };
 }
 
-function makeTransporter() {
-  const { user, pass, host, port, secure, family } = getSmtpSettings();
-
-  if (!user || !pass) {
-    return null;
+async function verifyEmailTransport() {
+  const { apiKey, from } = getResendSettings();
+  if (!apiKey || !from) {
+    return {
+      ok: false,
+      reason: 'missing_resend_config',
+      details: {
+        hasResendApiKey: Boolean(apiKey),
+        hasEmailFrom: Boolean(from)
+      }
+    };
   }
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    family,
-    requireTLS: !secure,
-    auth: { user, pass },
-    // Railway can prefer IPv6 even when family is set; force IPv4 DNS lookup.
-    lookup: (hostname, options, callback) => {
-      dns.lookup(
-        hostname,
-        {
-          family,
-          all: false,
-          hints: dns.ADDRCONFIG
-        },
-        callback
-      );
-    }
-  });
+  return { ok: true, reason: 'ok', details: { provider: 'resend', from } };
 }
 
-async function verifyEmailTransport() {
-  const { user, pass, host, port, secure, family } = getSmtpSettings();
-  if (!user || !pass) {
-    return {
-      ok: false,
-      reason: 'missing_credentials',
-      details: {
-        hasSmtpUser: Boolean(user),
-        hasSmtpPass: Boolean(pass)
-      }
-    };
+async function sendResendEmail({ to, subject, text, html, headers }) {
+  const { apiKey, from, replyTo } = getResendSettings();
+  if (!apiKey || !from) {
+    throw new Error('Configuratia Resend este incompleta.');
   }
 
-  const transporter = makeTransporter();
-  if (!transporter) {
-    return { ok: false, reason: 'missing_credentials' };
+  const payload = {
+    from,
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    text,
+    html,
+    headers: headers || {}
+  };
+
+  if (replyTo) {
+    payload.reply_to = replyTo;
   }
 
-  try {
-    await transporter.verify();
-    return {
-      ok: true,
-      reason: 'ok',
-      details: { host, port, secure, family }
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      reason: 'verify_failed',
-      details: {
-        host,
-        port,
-        secure,
-        family,
-        message: error.message
-      }
-    };
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const responseText = await response.text();
+    throw new Error(`Resend API ${response.status}: ${responseText}`);
   }
 }
 
@@ -335,17 +306,17 @@ function renderCustomerHtml(order, items) {
 }
 
 async function sendOrderEmails({ order, items }) {
-  const { user: smtpUser, pass: smtpPass } = getSmtpSettings();
-  const adminEmail = String(process.env.ORDER_NOTIFY_EMAIL || smtpUser).trim();
+  const { apiKey, from } = getResendSettings();
+  const adminEmail = String(process.env.ORDER_NOTIFY_EMAIL || '').trim();
   const customerEmail = String(order.customer_email || '').trim();
 
-  if (!smtpUser || !smtpPass) {
+  if (!apiKey || !from) {
     return {
       sent: false,
-      reason: 'missing_credentials',
+      reason: 'missing_resend_config',
       details: {
-        hasSmtpUser: Boolean(smtpUser),
-        hasSmtpPass: Boolean(smtpPass)
+        hasResendApiKey: Boolean(apiKey),
+        hasEmailFrom: Boolean(from)
       }
     };
   }
@@ -355,11 +326,6 @@ async function sendOrderEmails({ order, items }) {
       sent: false,
       reason: 'missing_admin_email'
     };
-  }
-
-  const transporter = makeTransporter();
-  if (!transporter) {
-    return { sent: false, reason: 'missing_credentials' };
   }
 
   const subjectAdmin = `Comanda noua ${order.order_number}`;
@@ -382,8 +348,7 @@ async function sendOrderEmails({ order, items }) {
     `Observatii: ${order.customer_note || '-'}`
   ].join('\n');
 
-  await transporter.sendMail({
-    from: `"Flori de Mai Bujori" <${smtpUser}>`,
+  await sendResendEmail({
     to: adminEmail,
     subject: subjectAdmin,
     text: textAdmin,
@@ -408,8 +373,7 @@ async function sendOrderEmails({ order, items }) {
       `Flori de Mai Bujori`
     ].join('\n');
 
-    await transporter.sendMail({
-      from: `"Flori de Mai Bujori" <${smtpUser}>`,
+    await sendResendEmail({
       to: customerEmail,
       subject: subjectCustomer,
       text: textCustomer,
