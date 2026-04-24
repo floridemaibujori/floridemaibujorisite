@@ -148,6 +148,14 @@ function normalizeItems(items) {
     .filter((item) => item.productId > 0 && item.qty > 0);
 }
 
+function dispatchOrderEmails(order, items, contextLabel) {
+  setImmediate(() => {
+    sendOrderEmails({ order, items }).catch((emailError) => {
+      console.error(`Eroare trimitere email (${contextLabel}):`, emailError.message);
+    });
+  });
+}
+
 async function createOrder(payload) {
   const client = await pool.connect();
 
@@ -464,11 +472,7 @@ router.post('/api/comenzi', async (req, res) => {
       });
     }
 
-    try {
-      await sendOrderEmails({ order: result.order, items: result.items });
-    } catch (emailError) {
-      console.error('Eroare trimitere email comanda ramburs:', emailError.message);
-    }
+    dispatchOrderEmails(result.order, result.items, 'comanda ramburs');
 
     return res.json({
       ok: true,
@@ -536,11 +540,7 @@ router.get('/comanda/plata-succes', async (req, res) => {
     const updatedOrder = updatedOrderResult.rows[0];
 
     if (!wasPaidBefore && ['platit', 'avans platit'].includes(updatedOrder.payment_status)) {
-      try {
-        await sendOrderEmails({ order: updatedOrder, items: itemsResult.rows });
-      } catch (emailError) {
-        console.error('Eroare trimitere email dupa plata Stripe:', emailError.message);
-      }
+      dispatchOrderEmails(updatedOrder, itemsResult.rows, 'plata stripe');
     }
 
     return res.render('pages/order-success', {
