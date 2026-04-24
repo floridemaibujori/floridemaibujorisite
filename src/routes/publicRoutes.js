@@ -150,9 +150,17 @@ function normalizeItems(items) {
 
 function dispatchOrderEmails(order, items, contextLabel) {
   setImmediate(() => {
-    sendOrderEmails({ order, items }).catch((emailError) => {
-      console.error(`Eroare trimitere email (${contextLabel}):`, emailError.message);
-    });
+    sendOrderEmails({ order, items })
+      .then((result) => {
+        if (!result?.sent) {
+          console.warn(`Email netrimis (${contextLabel}): ${result?.reason || 'unknown'}`, result?.details || {});
+        } else {
+          console.log(`Email trimis (${contextLabel}) pentru comanda ${order.order_number || order.id}.`);
+        }
+      })
+      .catch((emailError) => {
+        console.error(`Eroare trimitere email (${contextLabel}):`, emailError.message);
+      });
   });
 }
 

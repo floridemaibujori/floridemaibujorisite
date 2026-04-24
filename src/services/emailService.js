@@ -1,8 +1,8 @@
 const nodemailer = require('nodemailer');
 
 function makeTransporter() {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const user = String(process.env.SMTP_USER || '').trim();
+  const pass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '').trim();
 
   if (!user || !pass) {
     return null;
@@ -261,13 +261,33 @@ function renderCustomerHtml(order, items) {
 }
 
 async function sendOrderEmails({ order, items }) {
+  const smtpUser = String(process.env.SMTP_USER || '').trim();
+  const smtpPass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '').trim();
+  const adminEmail = String(process.env.ORDER_NOTIFY_EMAIL || smtpUser).trim();
+  const customerEmail = String(order.customer_email || '').trim();
+
+  if (!smtpUser || !smtpPass) {
+    return {
+      sent: false,
+      reason: 'missing_credentials',
+      details: {
+        hasSmtpUser: Boolean(smtpUser),
+        hasSmtpPass: Boolean(smtpPass)
+      }
+    };
+  }
+
+  if (!adminEmail) {
+    return {
+      sent: false,
+      reason: 'missing_admin_email'
+    };
+  }
+
   const transporter = makeTransporter();
   if (!transporter) {
     return { sent: false, reason: 'missing_credentials' };
   }
-
-  const adminEmail = process.env.ORDER_NOTIFY_EMAIL || process.env.SMTP_USER;
-  const customerEmail = order.customer_email;
 
   const subjectAdmin = `Comanda noua ${order.order_number}`;
   const textAdmin = [
@@ -290,7 +310,7 @@ async function sendOrderEmails({ order, items }) {
   ].join('\n');
 
   await transporter.sendMail({
-    from: `"Flori de Mai Bujori" <${process.env.SMTP_USER}>`,
+    from: `"Flori de Mai Bujori" <${smtpUser}>`,
     to: adminEmail,
     subject: subjectAdmin,
     text: textAdmin,
@@ -316,7 +336,7 @@ async function sendOrderEmails({ order, items }) {
     ].join('\n');
 
     await transporter.sendMail({
-      from: `"Flori de Mai Bujori" <${process.env.SMTP_USER}>`,
+      from: `"Flori de Mai Bujori" <${smtpUser}>`,
       to: customerEmail,
       subject: subjectCustomer,
       text: textCustomer,
@@ -325,7 +345,7 @@ async function sendOrderEmails({ order, items }) {
     });
   }
 
-  return { sent: true };
+  return { sent: true, reason: 'ok' };
 }
 
 module.exports = { sendOrderEmails };
