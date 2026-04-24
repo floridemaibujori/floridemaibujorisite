@@ -93,8 +93,11 @@
 
       if (payload.email && payload.email.sent === false) {
         const reason = payload.email.reason || 'necunoscut';
+        const details = payload.email.details
+          ? ` ${JSON.stringify(payload.email.details)}`
+          : '';
         debugNode.hidden = false;
-        debugNode.textContent = `Debug email: netrimis (${reason}).`;
+        debugNode.textContent = `Debug email: netrimis (${reason}).${details}`;
       } else if (payload.email && payload.email.sent === true) {
         debugNode.hidden = false;
         debugNode.textContent = 'Debug email: trimis cu succes.';
