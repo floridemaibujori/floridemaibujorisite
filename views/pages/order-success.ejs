@@ -1,5 +1,11 @@
 <%- include('../partials/head') %>
 <%- include('../partials/header', { currentPath, company }) %>
+<% const subtotalAmount = Number(order.subtotal_amount || order.total_amount || 0); %>
+<% const discountAmount = Number(order.discount_amount || 0); %>
+<% const fullOrderAmount = Number((subtotalAmount - discountAmount).toFixed(2)); %>
+<% const payableNowAmount = Number(order.total_amount || 0); %>
+<% const remainingAmount = Number((fullOrderAmount - payableNowAmount).toFixed(2)); %>
+<% const hasRemainingPayment = remainingAmount > 0; %>
 <main class="section">
   <div class="container card order-success-card">
     <p class="eyebrow">Comanda inregistrata</p>
@@ -21,9 +27,15 @@
         <h3>Plata si total</h3>
         <p><strong>Metoda plata:</strong> <%= order.payment_method %></p>
         <p><strong>Status plata:</strong> <%= order.payment_status %></p>
-        <p><strong>Subtotal:</strong> <%= Number(order.subtotal_amount || order.total_amount).toFixed(2) %> lei</p>
-        <p><strong>Reducere:</strong> <%= Number(order.discount_amount || 0).toFixed(2) %> lei</p>
-        <p><strong>Total:</strong> <%= Number(order.total_amount).toFixed(2) %> lei</p>
+        <p><strong>Subtotal:</strong> <%= subtotalAmount.toFixed(2) %> lei</p>
+        <p><strong>Reducere:</strong> <%= discountAmount.toFixed(2) %> lei</p>
+        <p><strong>Total comanda:</strong> <%= fullOrderAmount.toFixed(2) %> lei</p>
+        <% if (hasRemainingPayment) { %>
+          <p><strong>Platit acum:</strong> <%= payableNowAmount.toFixed(2) %> lei</p>
+          <p><strong>Rest la livrare:</strong> <%= remainingAmount.toFixed(2) %> lei</p>
+        <% } else { %>
+          <p><strong>Total:</strong> <%= payableNowAmount.toFixed(2) %> lei</p>
+        <% } %>
       </article>
     </div>
 

@@ -291,6 +291,41 @@
     return { code, percent };
   }
 
+  function getCheckoutTotals(cart, couponPercent) {
+    let subtotal = 0;
+    let payableNowSubtotal = 0;
+    let hasPreorderItems = false;
+
+    cart.forEach((item) => {
+      const lineTotal = Number(item.price) * Number(item.qty);
+      subtotal += lineTotal;
+
+      if (isPreorderCartItem(item)) {
+        hasPreorderItems = true;
+        const depositPercent = toPositiveNumber(item.preorderDepositPercent, 50);
+        payableNowSubtotal += lineTotal * (depositPercent / 100);
+      } else {
+        payableNowSubtotal += lineTotal;
+      }
+    });
+
+    const discount = Number(((subtotal * couponPercent) / 100).toFixed(2));
+    const orderTotal = Number((subtotal - discount).toFixed(2));
+    const ratio = subtotal > 0 ? (payableNowSubtotal / subtotal) : 0;
+    const payableNowDiscount = Number((discount * ratio).toFixed(2));
+    const payableNowTotal = Number((payableNowSubtotal - payableNowDiscount).toFixed(2));
+    const remainingAmount = Number((orderTotal - payableNowTotal).toFixed(2));
+
+    return {
+      subtotal,
+      discount,
+      orderTotal,
+      payableNowTotal,
+      remainingAmount,
+      hasPreorderItems
+    };
+  }
+
   function applyCheckoutPaymentRules(cart) {
     if (!checkoutForm) {
       return;
@@ -331,12 +366,9 @@
       return;
     }
 
-    let subtotal = 0;
     const list = document.createElement('div');
 
     cart.forEach((item, index) => {
-      subtotal += item.price * item.qty;
-
       const row = document.createElement('div');
       row.className = 'cart-item';
       row.innerHTML = `
@@ -354,16 +386,25 @@
     });
 
     const coupon = getAppliedCoupon();
-    const discount = Number(((subtotal * coupon.percent) / 100).toFixed(2));
-    const total = Number((subtotal - discount).toFixed(2));
+    const totals = getCheckoutTotals(cart, coupon.percent);
 
     const totalBox = document.createElement('div');
     totalBox.className = 'cart-totals';
-    totalBox.innerHTML = `
-      <p><span>Subtotal</span><strong>${subtotal.toFixed(2)} lei</strong></p>
-      <p><span>Reducere</span><strong>-${discount.toFixed(2)} lei</strong></p>
-      <p class="grand-total"><span>Total</span><strong>${total.toFixed(2)} lei</strong></p>
-    `;
+    if (totals.hasPreorderItems) {
+      totalBox.innerHTML = `
+        <p><span>Subtotal comanda</span><strong>${totals.subtotal.toFixed(2)} lei</strong></p>
+        <p><span>Reducere</span><strong>-${totals.discount.toFixed(2)} lei</strong></p>
+        <p><span>Total comanda</span><strong>${totals.orderTotal.toFixed(2)} lei</strong></p>
+        <p class="grand-total"><span>De plata acum</span><strong>${totals.payableNowTotal.toFixed(2)} lei</strong></p>
+        <p><span>Rest la livrare</span><strong>${totals.remainingAmount.toFixed(2)} lei</strong></p>
+      `;
+    } else {
+      totalBox.innerHTML = `
+        <p><span>Subtotal</span><strong>${totals.subtotal.toFixed(2)} lei</strong></p>
+        <p><span>Reducere</span><strong>-${totals.discount.toFixed(2)} lei</strong></p>
+        <p class="grand-total"><span>Total</span><strong>${totals.orderTotal.toFixed(2)} lei</strong></p>
+      `;
+    }
 
     cartPanel.innerHTML = '';
     cartPanel.appendChild(list);

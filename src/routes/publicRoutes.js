@@ -155,6 +155,7 @@ async function createOrder(payload) {
     await client.query('BEGIN');
 
     let subtotal = 0;
+    let payableNowSubtotal = 0;
     const hydrated = [];
 
     for (const item of payload.items) {
@@ -172,12 +173,22 @@ async function createOrder(payload) {
       const lineTotal = productPrice * item.qty;
       subtotal += lineTotal;
 
+      const isPreorder = product.availability_mode === 'preorder';
+      const rawDepositPercent = Number(product.preorder_deposit_percent || 50);
+      const preorderDepositPercent = Number.isFinite(rawDepositPercent)
+        ? Math.min(90, Math.max(10, rawDepositPercent))
+        : 50;
+      const payableLineTotal = isPreorder
+        ? lineTotal * (preorderDepositPercent / 100)
+        : lineTotal;
+      payableNowSubtotal += payableLineTotal;
+
       hydrated.push({
         productId: product.id,
         productName: product.name,
         productPrice,
         availabilityMode: product.availability_mode,
-        preorderDepositPercent: Number(product.preorder_deposit_percent || 50),
+        preorderDepositPercent,
         quantity: item.qty,
         lineTotal
       });
@@ -190,7 +201,9 @@ async function createOrder(payload) {
 
     const discountPercent = getCouponDiscountPercent(payload.couponCode);
     const discountAmount = Number(((subtotal * discountPercent) / 100).toFixed(2));
-    const total = Number((subtotal - discountAmount).toFixed(2));
+    const payableRatio = subtotal > 0 ? (payableNowSubtotal / subtotal) : 0;
+    const payableDiscountAmount = Number((discountAmount * payableRatio).toFixed(2));
+    const payableNowTotal = Number((payableNowSubtotal - payableDiscountAmount).toFixed(2));
     const normalizedCoupon = discountPercent > 0 ? String(payload.couponCode).trim().toUpperCase() : null;
     const paymentStatus = payload.paymentMethod === 'ramburs' ? 'neplatit' : 'in asteptare';
 
@@ -212,7 +225,7 @@ async function createOrder(payload) {
         discountPercent,
         discountAmount,
         Number(subtotal.toFixed(2)),
-        total,
+        payableNowTotal,
         payload.paymentMethod,
         paymentStatus
       ]
@@ -495,20 +508,26 @@ router.get('/comanda/plata-succes', async (req, res) => {
       });
     }
 
-    const wasPaidBefore = order.payment_status === 'platit';
+    const wasPaidBefore = ['platit', 'avans platit'].includes(order.payment_status);
 
     if (session.payment_status === 'paid') {
       const paymentIntentId = typeof session.payment_intent === 'string'
         ? session.payment_intent
         : session.payment_intent?.id || null;
+      const subtotalAmount = Number(order.subtotal_amount || 0);
+      const discountAmount = Number(order.discount_amount || 0);
+      const payableNowAmount = Number(order.total_amount || 0);
+      const fullOrderAmount = Number((subtotalAmount - discountAmount).toFixed(2));
+      const remainingAmount = Number((fullOrderAmount - payableNowAmount).toFixed(2));
+      const nextPaymentStatus = remainingAmount > 0 ? 'avans platit' : 'platit';
 
       await query(
         `
         UPDATE orders
-        SET payment_status = 'platit', stripe_payment_intent_id = $1, updated_at = NOW()
-        WHERE id = $2
+        SET payment_status = $1, stripe_payment_intent_id = $2, updated_at = NOW()
+        WHERE id = $3
         `,
-        [paymentIntentId, order.id]
+        [nextPaymentStatus, paymentIntentId, order.id]
       );
     }
 
@@ -516,7 +535,7 @@ router.get('/comanda/plata-succes', async (req, res) => {
     const itemsResult = await query('SELECT * FROM order_items WHERE order_id = $1 ORDER BY id ASC', [order.id]);
     const updatedOrder = updatedOrderResult.rows[0];
 
-    if (!wasPaidBefore && updatedOrder.payment_status === 'platit') {
+    if (!wasPaidBefore && ['platit', 'avans platit'].includes(updatedOrder.payment_status)) {
       try {
         await sendOrderEmails({ order: updatedOrder, items: itemsResult.rows });
       } catch (emailError) {
