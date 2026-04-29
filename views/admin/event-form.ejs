@@ -47,23 +47,24 @@
         <input type="file" name="images" accept="image/*" multiple />
         <span class="small-note">Poti incarca mai multe poze. Vor aparea in slider pe pagina de evenimente.</span>
       </label>
-      <% if (images?.length) { %>
-        <div class="full">
-          <p class="small-note" style="margin-bottom: 0.5rem;">Imagini curente:</p>
-          <div class="image-admin-grid">
-            <% images.forEach((img) => { %>
-              <div class="card" style="padding: 0.65rem;">
-                <img src="<%= img.image_path %>" alt="<%= event.title %>" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-                <form action="/admin/evenimente/<%= event.id %>/imagini/<%= img.id %>/sterge" method="post" style="margin-top: 0.45rem;" onsubmit="return confirm('Sigur stergi aceasta imagine?');">
-                  <button class="btn btn-small btn-danger" type="submit">Sterge imaginea</button>
-                </form>
-              </div>
-            <% }) %>
-          </div>
-        </div>
-      <% } %>
       <button class="btn btn-primary" type="submit"><%= mode === 'create' ? 'Adauga eveniment' : 'Salveaza modificarile' %></button>
     </form>
+
+    <% if (images?.length) { %>
+      <div style="margin-top: 1rem;">
+        <p class="small-note" style="margin-bottom: 0.5rem;">Imagini curente:</p>
+        <div class="image-admin-grid">
+          <% images.forEach((img) => { %>
+            <div class="card" style="padding: 0.65rem;">
+              <img src="<%= img.image_path %>" alt="<%= event.title %>" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+              <form action="/admin/evenimente/<%= event.id %>/imagini/<%= img.id %>/sterge" method="post" style="margin-top: 0.45rem;" onsubmit="return confirm('Sigur stergi aceasta imagine?');">
+                <button class="btn btn-small btn-danger" type="submit">Sterge imaginea</button>
+              </form>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
   </section>
 </main>
 <%- include('footer') %>
