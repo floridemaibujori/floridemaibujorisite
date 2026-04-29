@@ -733,10 +733,19 @@ router.get('/blog', (req, res) => {
 router.get('/evenimente', async (req, res) => {
   const eventsResult = await query(
     `
-    SELECT id, title, event_date, location, description, image_path
-    FROM events
+    SELECT e.id, e.title, e.event_date, e.location, e.description, e.image_path,
+      COALESCE(
+        JSON_AGG(
+          JSON_BUILD_OBJECT('id', ei.id, 'image_path', ei.image_path)
+          ORDER BY ei.sort_order ASC, ei.id ASC
+        ) FILTER (WHERE ei.id IS NOT NULL),
+        '[]'::json
+      ) AS images
+    FROM events e
+    LEFT JOIN event_images ei ON ei.event_id = e.id
     WHERE active = TRUE
-    ORDER BY sort_order ASC, event_date ASC, id ASC
+    GROUP BY e.id
+    ORDER BY e.sort_order ASC, e.event_date ASC, e.id ASC
     `
   );
 
@@ -748,6 +757,7 @@ router.get('/evenimente', async (req, res) => {
 
     return {
       ...event,
+      images: Array.isArray(event.images) ? event.images : [],
       date: dateLabel
     };
   });

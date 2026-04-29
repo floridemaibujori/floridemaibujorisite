@@ -183,6 +183,85 @@
     });
   });
 
+  document.querySelectorAll('[data-event-slider]').forEach((slider) => {
+    const mainImage = slider.querySelector('[data-event-main-image]');
+    const dotsRoot = slider.querySelector('[data-event-dots]');
+    const prevButton = slider.querySelector('[data-event-prev]');
+    const nextButton = slider.querySelector('[data-event-next]');
+    if (!mainImage || !dotsRoot || !prevButton || !nextButton) {
+      return;
+    }
+
+    let images = [];
+    try {
+      images = JSON.parse(decodeURIComponent(mainImage.dataset.eventImages || '[]'));
+    } catch (error) {
+      images = [];
+    }
+
+    if (!images.length) {
+      images = [mainImage.getAttribute('src') || '/images/placeholder-peony-1.svg'];
+    }
+
+    let currentIndex = 0;
+    const dots = images.map((_, index) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'event-dot';
+      dot.setAttribute('aria-label', `Imagine ${index + 1}`);
+      dot.addEventListener('click', function () {
+        currentIndex = index;
+        renderSlider();
+      });
+      dotsRoot.appendChild(dot);
+      return dot;
+    });
+
+    function renderSlider() {
+      mainImage.setAttribute('src', images[currentIndex]);
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle('is-active', idx === currentIndex);
+      });
+    }
+
+    prevButton.addEventListener('click', function () {
+      currentIndex = (currentIndex - 1 + images.length) % images.length;
+      renderSlider();
+    });
+
+    nextButton.addEventListener('click', function () {
+      currentIndex = (currentIndex + 1) % images.length;
+      renderSlider();
+    });
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const minSwipeDistance = 40;
+
+    mainImage.addEventListener('touchstart', function (event) {
+      touchStartX = Number(event.changedTouches?.[0]?.clientX || 0);
+    }, { passive: true });
+
+    mainImage.addEventListener('touchend', function (event) {
+      touchEndX = Number(event.changedTouches?.[0]?.clientX || 0);
+      const deltaX = touchEndX - touchStartX;
+
+      if (Math.abs(deltaX) < minSwipeDistance) {
+        return;
+      }
+
+      if (deltaX < 0) {
+        currentIndex = (currentIndex + 1) % images.length;
+      } else {
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+      }
+
+      renderSlider();
+    }, { passive: true });
+
+    renderSlider();
+  });
+
   document.querySelectorAll('[data-add-to-cart]').forEach((button) => {
     button.addEventListener('click', function () {
       const availabilityMode = String(button.dataset.productAvailabilityMode || '').trim().toLowerCase() === 'preorder'

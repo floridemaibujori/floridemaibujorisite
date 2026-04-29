@@ -43,14 +43,23 @@
         </select>
       </label>
       <label class="full">
-        Poza eveniment
-        <input type="file" name="image" accept="image/*" />
-        <span class="small-note">Daca incarci o poza noua, cea veche se inlocuieste.</span>
+        Poze eveniment
+        <input type="file" name="images" accept="image/*" multiple />
+        <span class="small-note">Poti incarca mai multe poze. Vor aparea in slider pe pagina de evenimente.</span>
       </label>
-      <% if (event?.image_path) { %>
+      <% if (images?.length) { %>
         <div class="full">
-          <p class="small-note" style="margin-bottom: 0.5rem;">Imagine curenta:</p>
-          <img src="<%= event.image_path %>" alt="<%= event.title %>" style="max-width: 280px; border-radius: 14px; border: 1px solid #e8dce1;" />
+          <p class="small-note" style="margin-bottom: 0.5rem;">Imagini curente:</p>
+          <div class="image-admin-grid">
+            <% images.forEach((img) => { %>
+              <div class="card" style="padding: 0.65rem;">
+                <img src="<%= img.image_path %>" alt="<%= event.title %>" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+                <form action="/admin/evenimente/<%= event.id %>/imagini/<%= img.id %>/sterge" method="post" style="margin-top: 0.45rem;" onsubmit="return confirm('Sigur stergi aceasta imagine?');">
+                  <button class="btn btn-small btn-danger" type="submit">Sterge imaginea</button>
+                </form>
+              </div>
+            <% }) %>
+          </div>
         </div>
       <% } %>
       <button class="btn btn-primary" type="submit"><%= mode === 'create' ? 'Adauga eveniment' : 'Salveaza modificarile' %></button>

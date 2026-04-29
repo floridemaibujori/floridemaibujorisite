@@ -6,6 +6,10 @@
     <h1>Panou administrare</h1>
   </div>
 
+  <% if (message) { %>
+    <div class="container card success"><%= message %></div>
+  <% } %>
+
   <section class="container cards-grid metrics-grid">
     <article class="card metric-card">
       <p>Total produse</p>
@@ -27,6 +31,46 @@
       <p>Comenzi noi</p>
       <h2><%= counts.newOrders %></h2>
     </article>
+  </section>
+
+  <section class="container card">
+    <h2>Schimba parola admin</h2>
+    <form class="form-grid" action="/admin/schimba-parola/cod" method="post">
+      <label>
+        Parola curenta
+        <input type="password" name="current_password" required />
+      </label>
+      <label>
+        Parola noua
+        <input type="password" name="next_password" minlength="8" required />
+      </label>
+      <label class="full">
+        Confirma parola noua
+        <input type="password" name="confirm_password" minlength="8" required />
+      </label>
+      <button class="btn btn-primary" type="submit">Trimite cod pe email</button>
+    </form>
+    <% if (passwordResetState) { %>
+      <hr style="border: 0; border-top: 1px solid #ecdee3; margin: 1rem 0;" />
+      <form class="form-grid" action="/admin/schimba-parola/confirma" method="post">
+        <label class="full">
+          Cod verificare (trimis pe floridemaibujori@gmail.com)
+          <input type="text" name="verification_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required />
+        </label>
+        <button class="btn btn-secondary" type="submit">Confirma schimbarea parolei</button>
+      </form>
+      <form action="/admin/schimba-parola/retrimite-cod" method="post" style="margin-top: 0.7rem;">
+        <button
+          class="btn btn-ghost"
+          type="submit"
+          data-resend-code-btn
+          data-cooldown-left="<%= passwordResetCooldownLeft || 0 %>"
+          <%= (passwordResetCooldownLeft || 0) > 0 ? 'disabled' : '' %>
+        >
+          <%= (passwordResetCooldownLeft || 0) > 0 ? `Retrimite cod in ${passwordResetCooldownLeft}s` : 'Retrimite cod' %>
+        </button>
+      </form>
+    <% } %>
   </section>
 
   <section class="container card">
@@ -92,4 +136,29 @@
     </div>
   </section>
 </main>
+<script>
+  (function () {
+    const button = document.querySelector('[data-resend-code-btn]');
+    if (!button) return;
+
+    let remaining = Number(button.dataset.cooldownLeft || 0);
+    if (!Number.isFinite(remaining) || remaining <= 0) return;
+
+    const initialText = 'Retrimite cod';
+    button.disabled = true;
+
+    const tick = function () {
+      if (remaining <= 0) {
+        button.disabled = false;
+        button.textContent = initialText;
+        return;
+      }
+      button.textContent = `Retrimite cod in ${remaining}s`;
+      remaining -= 1;
+      setTimeout(tick, 1000);
+    };
+
+    tick();
+  })();
+</script>
 <%- include('footer') %>

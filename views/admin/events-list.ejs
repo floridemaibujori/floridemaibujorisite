@@ -36,12 +36,12 @@
           <% } %>
           <% events.forEach((event) => { %>
             <tr>
-              <td><img class="table-thumb" src="<%= event.image_path || '/images/placeholder-peony-1.svg' %>" alt="<%= event.title %>" /></td>
+              <td><img class="table-thumb" src="<%= event.cover_image || event.image_path || '/images/placeholder-peony-1.svg' %>" alt="<%= event.title %>" /></td>
               <td><%= event.title %></td>
               <td><%= event.event_date ? new Date(event.event_date).toISOString().slice(0, 10) : '-' %></td>
               <td><%= event.location %></td>
               <td><span class="status-pill"><%= event.active ? 'Activ' : 'Inactiv' %></span></td>
-              <td><%= event.sort_order %></td>
+              <td><%= event.sort_order %> · <%= event.images_count %> poze</td>
               <td>
                 <div class="btn-mini-row">
                   <a class="btn btn-small btn-ghost" href="/admin/evenimente/<%= event.id %>/editare">Editeaza</a>

@@ -22,6 +22,10 @@ async function start() {
         console.log('Email transport OK:', smtpCheck.details);
       } else {
         console.warn(`Email transport indisponibil: ${smtpCheck.reason}`, smtpCheck.details || {});
+        if (process.env.NODE_ENV === 'production') {
+          console.error('Configuratia de email lipseste in productie. Oprire server pentru a evita comenzi fara email.');
+          shutdown('EMAIL_CONFIG_MISSING');
+        }
       }
     });
   });

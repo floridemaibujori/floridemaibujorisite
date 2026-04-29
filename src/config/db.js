@@ -121,6 +121,14 @@ async function initDb() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS event_images (
+      id SERIAL PRIMARY KEY,
+      event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+      image_path TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   `);
 
   await query(`
@@ -296,6 +304,19 @@ async function initDb() {
       );
     }
   }
+
+  await query(`
+    INSERT INTO event_images (event_id, image_path, sort_order)
+    SELECT e.id, e.image_path, 0
+    FROM events e
+    WHERE e.image_path IS NOT NULL
+      AND e.image_path <> ''
+      AND NOT EXISTS (
+        SELECT 1
+        FROM event_images ei
+        WHERE ei.event_id = e.id
+      )
+  `);
 
   const productResult = await query('SELECT COUNT(*)::int AS count FROM products');
   if (productResult.rows[0].count === 0) {

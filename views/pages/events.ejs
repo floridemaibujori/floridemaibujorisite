@@ -16,7 +16,19 @@
     <% } %>
     <% events.forEach((event) => { %>
       <article class="card">
-        <img src="<%= event.image_path || '/images/placeholder-peony-1.svg' %>" alt="<%= event.title %>" style="width: 100%; aspect-ratio: 4/3; object-fit: cover; margin-bottom: 0.85rem;" />
+        <% const eventImages = (event.images && event.images.length) ? event.images : [{ image_path: event.image_path || '/images/placeholder-peony-1.svg' }]; %>
+        <div class="event-slider" data-event-slider>
+          <button class="event-slider-btn prev" type="button" data-event-prev>&lsaquo;</button>
+          <img
+            src="<%= eventImages[0].image_path %>"
+            alt="<%= event.title %>"
+            class="event-slider-image"
+            data-event-main-image
+            data-event-images="<%= encodeURIComponent(JSON.stringify(eventImages.map((img) => img.image_path))) %>"
+          />
+          <button class="event-slider-btn next" type="button" data-event-next>&rsaquo;</button>
+          <div class="event-slider-dots" data-event-dots></div>
+        </div>
         <p class="meta"><%= event.date %> · <%= event.location %></p>
         <h3><%= event.title %></h3>
         <p><%= event.description %></p>

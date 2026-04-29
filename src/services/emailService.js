@@ -404,4 +404,41 @@ async function sendOrderEmails({ order, items }) {
   return { sent: true, reason: 'ok' };
 }
 
-module.exports = { sendOrderEmails, verifyEmailTransport };
+async function sendAdminPasswordVerificationCode({ to, code }) {
+  const normalizedTo = String(to || '').trim().toLowerCase();
+  if (!normalizedTo) {
+    return { sent: false, reason: 'missing_recipient' };
+  }
+
+  const subject = 'Cod verificare schimbare parola admin';
+  const text = [
+    'Ai cerut schimbarea parolei de admin.',
+    `Codul tau de verificare este: ${code}`,
+    'Codul expira in 10 minute.',
+    'Daca nu ai initiat aceasta cerere, ignora acest email.'
+  ].join('\n');
+
+  await sendResendEmail({
+    to: normalizedTo,
+    subject,
+    text,
+    html: emailLayout({
+      eyebrow: 'Securitate admin',
+      title: 'Verificare schimbare parola',
+      intro: 'Foloseste codul de mai jos pentru a confirma schimbarea parolei.',
+      contentHtml: `
+        <div style="padding: 18px; border: 1px solid #f0e0e8; border-radius: 14px; background: #fff8fb; text-align: center;">
+          <p style="margin: 0 0 8px; color: #6c5763; font-size: 14px;">Cod de verificare</p>
+          <p style="margin: 0; color: #bc4f86; font-size: 36px; font-weight: 800; letter-spacing: 6px;">${escapeHtml(code)}</p>
+          <p style="margin: 10px 0 0; color: #7a6672; font-size: 13px;">Expira in 10 minute.</p>
+        </div>
+      `,
+      footerNote: 'Daca nu ai initiat aceasta actiune, ignora emailul si verifica securitatea contului.'
+    }),
+    headers: { 'X-Entity-Ref-ID': `admin-password-${Date.now()}` }
+  });
+
+  return { sent: true, reason: 'ok' };
+}
+
+module.exports = { sendOrderEmails, verifyEmailTransport, sendAdminPasswordVerificationCode };

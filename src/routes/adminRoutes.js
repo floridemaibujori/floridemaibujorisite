@@ -5,6 +5,7 @@ const { hashPassword, safeCompare } = require('../utils/security');
 const { requireAuth } = require('../middleware/auth');
 const { makeSlug } = require('../utils/slug');
 const { uploadImage, removeImage } = require('../services/storageService');
+const { sendAdminPasswordVerificationCode } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -114,11 +115,28 @@ async function getTrustReviewsForAdmin() {
 
 async function getEventsForAdmin() {
   const result = await query(`
-    SELECT *
-    FROM events
-    ORDER BY sort_order ASC, event_date ASC, id ASC
+    SELECT e.*, img.image_path AS cover_image, COUNT(ei.id)::int AS images_count
+    FROM events e
+    LEFT JOIN LATERAL (
+      SELECT image_path
+      FROM event_images
+      WHERE event_id = e.id
+      ORDER BY sort_order ASC, id ASC
+      LIMIT 1
+    ) img ON TRUE
+    LEFT JOIN event_images ei ON ei.event_id = e.id
+    GROUP BY e.id, img.image_path
+    ORDER BY e.sort_order ASC, e.event_date ASC, e.id ASC
   `);
 
+  return result.rows;
+}
+
+async function getEventImages(eventId) {
+  const result = await query(
+    'SELECT * FROM event_images WHERE event_id = $1 ORDER BY sort_order ASC, id ASC',
+    [eventId]
+  );
   return result.rows;
 }
 
@@ -197,10 +215,110 @@ router.get('/', requireAuth, async (req, res) => {
   res.render('admin/dashboard', {
     pageTitle: 'Dashboard',
     admin: req.session.admin,
+    message: req.query.message || '',
     counts,
     recentProducts: recentProducts.slice(0, 5),
-    recentOrders: recentOrders.slice(0, 5)
+    recentOrders: recentOrders.slice(0, 5),
+    passwordResetState: req.session.adminPasswordReset || null,
+    passwordResetCooldownLeft: req.session.adminPasswordReset
+      ? Math.max(0, 60 - Math.floor((Date.now() - Number(req.session.adminPasswordReset.lastSentAt || 0)) / 1000))
+      : 0
   });
+});
+
+router.post('/schimba-parola/cod', requireAuth, async (req, res) => {
+  const currentPassword = String(req.body.current_password || '');
+  const nextPassword = String(req.body.next_password || '');
+  const confirmPassword = String(req.body.confirm_password || '');
+
+  if (!currentPassword || !nextPassword || nextPassword.length < 8 || nextPassword !== confirmPassword) {
+    return res.redirect('/admin?message=Completeaza+corect+campurile+parolei+(minim+8+caractere).');
+  }
+
+  const adminResult = await query('SELECT * FROM admins WHERE id = $1', [req.session.admin.id]);
+  const admin = adminResult.rows[0];
+  if (!admin || !safeCompare(hashPassword(currentPassword), admin.password_hash)) {
+    return res.redirect('/admin?message=Parola+curenta+nu+este+corecta.');
+  }
+
+  const verificationCode = String(Math.floor(100000 + Math.random() * 900000));
+  const emailResult = await sendAdminPasswordVerificationCode({
+    to: 'floridemaibujori@gmail.com',
+    code: verificationCode
+  });
+
+  if (!emailResult.sent) {
+    return res.redirect('/admin?message=Nu+am+putut+trimite+codul+de+verificare.');
+  }
+
+  req.session.adminPasswordReset = {
+    pendingPasswordHash: hashPassword(nextPassword),
+    codeHash: hashPassword(verificationCode),
+    lastSentAt: Date.now(),
+    expiresAt: Date.now() + (10 * 60 * 1000)
+  };
+
+  return res.redirect('/admin?message=Codul+a+fost+trimis+pe+floridemaibujori@gmail.com');
+});
+
+router.post('/schimba-parola/retrimite-cod', requireAuth, async (req, res) => {
+  const resetState = req.session.adminPasswordReset;
+  if (!resetState) {
+    return res.redirect('/admin?message=Nu+exista+o+cerere+activa+de+schimbare+parola.');
+  }
+
+  const now = Date.now();
+  const lastSentAt = Number(resetState.lastSentAt || 0);
+  const elapsedSeconds = Math.floor((now - lastSentAt) / 1000);
+  if (elapsedSeconds < 60) {
+    const waitSeconds = 60 - elapsedSeconds;
+    return res.redirect(`/admin?message=Mai+asteapta+${waitSeconds}+secunde+inainte+sa+retrimiti+codul.`);
+  }
+
+  const verificationCode = String(Math.floor(100000 + Math.random() * 900000));
+  const emailResult = await sendAdminPasswordVerificationCode({
+    to: 'floridemaibujori@gmail.com',
+    code: verificationCode
+  });
+
+  if (!emailResult.sent) {
+    return res.redirect('/admin?message=Nu+am+putut+retrimite+codul+de+verificare.');
+  }
+
+  req.session.adminPasswordReset = {
+    ...resetState,
+    codeHash: hashPassword(verificationCode),
+    lastSentAt: now,
+    expiresAt: now + (10 * 60 * 1000)
+  };
+
+  return res.redirect('/admin?message=Cod+retrims+pe+floridemaibujori@gmail.com');
+});
+
+router.post('/schimba-parola/confirma', requireAuth, async (req, res) => {
+  const inputCode = String(req.body.verification_code || '').trim();
+  const resetState = req.session.adminPasswordReset;
+
+  if (!resetState || !inputCode) {
+    return res.redirect('/admin?message=Cod+invalid+sau+cerere+expirata.');
+  }
+
+  if (Date.now() > Number(resetState.expiresAt || 0)) {
+    req.session.adminPasswordReset = null;
+    return res.redirect('/admin?message=Codul+a+expirat.+Genereaza+un+cod+nou.');
+  }
+
+  if (!safeCompare(hashPassword(inputCode), resetState.codeHash)) {
+    return res.redirect('/admin?message=Cod+de+verificare+gresit.');
+  }
+
+  await query('UPDATE admins SET password_hash = $1 WHERE id = $2', [
+    resetState.pendingPasswordHash,
+    req.session.admin.id
+  ]);
+  req.session.adminPasswordReset = null;
+
+  return res.redirect('/admin?message=Parola+de+admin+a+fost+actualizata+cu+succes.');
 });
 
 router.get('/comenzi', requireAuth, async (req, res) => {
@@ -230,20 +348,26 @@ router.get('/evenimente/nou', requireAuth, (req, res) => {
     pageTitle: 'Eveniment nou',
     admin: req.session.admin,
     event: null,
+    images: [],
     mode: 'create',
     message: req.query.message || ''
   });
 });
 
-router.post('/evenimente', requireAuth, uploadContent.single('image'), async (req, res) => {
+router.post('/evenimente', requireAuth, uploadContent.array('images', 20), async (req, res) => {
   try {
     const { title, event_date, location, description, active, sort_order } = req.body;
-    const imagePath = req.file ? await uploadImage(req.file, 'site') : null;
+    const uploadedImagePaths = [];
+    for (const file of (req.files || [])) {
+      uploadedImagePaths.push(await uploadImage(file, 'site'));
+    }
+    const imagePath = uploadedImagePaths[0] || null;
 
-    await query(
+    const inserted = await query(
       `
       INSERT INTO events (title, event_date, location, description, image_path, active, sort_order, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      RETURNING id
       `,
       [
         String(title || '').trim(),
@@ -255,6 +379,14 @@ router.post('/evenimente', requireAuth, uploadContent.single('image'), async (re
         Number(sort_order || 0)
       ]
     );
+
+    const eventId = inserted.rows[0].id;
+    for (const [index, path] of uploadedImagePaths.entries()) {
+      await query(
+        'INSERT INTO event_images (event_id, image_path, sort_order) VALUES ($1, $2, $3)',
+        [eventId, path, index]
+      );
+    }
 
     res.redirect('/admin/evenimente?message=Eveniment+adaugat');
   } catch (error) {
@@ -272,16 +404,19 @@ router.get('/evenimente/:id/editare', requireAuth, async (req, res) => {
     return res.redirect('/admin/evenimente?message=Evenimentul+nu+a+fost+gasit');
   }
 
+  const images = await getEventImages(eventId);
+
   res.render('admin/event-form', {
     pageTitle: `Editare ${event.title}`,
     admin: req.session.admin,
     event,
+    images,
     mode: 'edit',
     message: req.query.message || ''
   });
 });
 
-router.post('/evenimente/:id', requireAuth, uploadContent.single('image'), async (req, res) => {
+router.post('/evenimente/:id', requireAuth, uploadContent.array('images', 20), async (req, res) => {
   try {
     const eventId = Number(req.params.id);
     const { title, event_date, location, description, active, sort_order } = req.body;
@@ -292,11 +427,25 @@ router.post('/evenimente/:id', requireAuth, uploadContent.single('image'), async
       return res.redirect('/admin/evenimente?message=Evenimentul+nu+a+fost+gasit');
     }
 
-    let imagePath = existingEvent.image_path || null;
-    if (req.file) {
-      imagePath = await uploadImage(req.file, 'site');
-      await removeImage(existingEvent.image_path);
+    const countResult = await query('SELECT COUNT(*)::int AS count FROM event_images WHERE event_id = $1', [eventId]);
+    const currentImageCount = countResult.rows[0].count;
+    const uploadedImagePaths = [];
+    for (const file of (req.files || [])) {
+      uploadedImagePaths.push(await uploadImage(file, 'site'));
     }
+
+    for (const [index, path] of uploadedImagePaths.entries()) {
+      await query(
+        'INSERT INTO event_images (event_id, image_path, sort_order) VALUES ($1, $2, $3)',
+        [eventId, path, currentImageCount + index]
+      );
+    }
+
+    const firstImageResult = await query(
+      'SELECT image_path FROM event_images WHERE event_id = $1 ORDER BY sort_order ASC, id ASC LIMIT 1',
+      [eventId]
+    );
+    const imagePath = firstImageResult.rows[0]?.image_path || null;
 
     await query(
       `
@@ -332,10 +481,41 @@ router.post('/evenimente/:id/sterge', requireAuth, async (req, res) => {
     return res.redirect('/admin/evenimente?message=Evenimentul+nu+a+fost+gasit');
   }
 
+  const imagesResult = await getEventImages(eventId);
+  for (const image of imagesResult) {
+    await removeImage(image.image_path);
+  }
   await removeImage(existingEvent.image_path);
 
   await query('DELETE FROM events WHERE id = $1', [eventId]);
   res.redirect('/admin/evenimente?message=Eveniment+sters');
+});
+
+router.post('/evenimente/:eventId/imagini/:imageId/sterge', requireAuth, async (req, res) => {
+  const eventId = Number(req.params.eventId);
+  const imageId = Number(req.params.imageId);
+
+  const imageResult = await query(
+    'SELECT * FROM event_images WHERE id = $1 AND event_id = $2',
+    [imageId, eventId]
+  );
+  const image = imageResult.rows[0];
+  if (!image) {
+    return res.redirect(`/admin/evenimente/${eventId}/editare?message=Imaginea+nu+a+fost+gasita`);
+  }
+
+  await removeImage(image.image_path);
+  await query('DELETE FROM event_images WHERE id = $1', [imageId]);
+  const firstImageResult = await query(
+    'SELECT image_path FROM event_images WHERE event_id = $1 ORDER BY sort_order ASC, id ASC LIMIT 1',
+    [eventId]
+  );
+  await query('UPDATE events SET image_path = $1, updated_at = NOW() WHERE id = $2', [
+    firstImageResult.rows[0]?.image_path || null,
+    eventId
+  ]);
+
+  return res.redirect(`/admin/evenimente/${eventId}/editare?message=Imagine+stearsa`);
 });
 
 router.get('/recenzii/incredere', requireAuth, async (req, res) => {
